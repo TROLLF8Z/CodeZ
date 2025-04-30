@@ -11,7 +11,7 @@
       <el-button type="primary" @click="search_user" :disabled="searching">搜索用户</el-button>
     </el-form-item>
     <el-form-item>
-      <el-button type="success" @click="search_user" :disabled="searching">新增用户</el-button>
+      <el-button type="success" @click="edit_user(0, 0, 2)" :disabled="searching">新增用户</el-button>
     </el-form-item>
   </el-form>
   <el-divider />
@@ -31,7 +31,7 @@
 
     <el-table-column label="操作">
       <template #default="scope">
-        <el-button size="small" type="primary" autocomplete="off" @click="edit_user(scope.$index, scope.row)">编辑</el-button>
+        <el-button size="small" type="primary" autocomplete="off" @click="edit_user(scope.$index, scope.row, 1)">编辑</el-button>
         <el-button size="small" type="danger" autocomplete="off" @click="" style="margin-left: 20px">删除</el-button>
       </template>
     </el-table-column>
@@ -97,7 +97,7 @@
       </el-form-item>
     </el-form>
     <div style="display: flex; align-items: center; justify-content: center;">
-      <el-button type="success" autocomplete="off" @click="drawerclose">提交修改</el-button>
+      <el-button type="success" autocomplete="off" @click="applychange">提交修改</el-button>
     </div>
   </el-drawer>
 </template>
@@ -113,6 +113,7 @@ export default {
       searching: false,
       resultform: [],
       drawerVisible: false,
+      drawerMode: -1,
 
       edit_userform: {
         uid: 0,
@@ -162,7 +163,7 @@ export default {
         this.$message.error("请至少输入一个查询条件")
         this.searching = false;
       } else {
-        this.$request.post("/codez/admin/search_user/", {
+        this.$request.post("/codez/admin/user/search/", {
           uid: this.userform.userId,
           displayname: this.userform.userName,
         }).then(res => {
@@ -184,34 +185,111 @@ export default {
       }
     },
 
-    edit_user(index, row) {
-      this.$request.post("/codez/admin/user_info/", {
-        uid: row.uid,
-      }).then(res => {
-        if (res.data.meta.status === 200) {
-          this.edit_userform.uid = res.data.data.uid;
-          this.edit_userform.displayname = res.data.data.displayname;
-          this.edit_userform.age = res.data.data.age;
-          this.edit_userform.gender = res.data.data.gender;
-          this.edit_userform.zcoins = res.data.data.zcoins;
-          this.edit_userform.password = res.data.data.password;
-          this.edit_userform.school = res.data.data.school;
-          this.edit_userform.phonenumber = res.data.data.phonenumber;
-          this.edit_userform.thirdpartyauth = res.data.data.thirdpartyauth;
-          this.edit_userform.avatar = res.data.data.avatar;
-          this.edit_userform.description = res.data.data.description;
-          this.edit_userform.medals = res.data.data.medals;
-          this.edit_userform.displaymedals = res.data.data.displaymedals;
-          this.edit_userform.unlockedbanks = res.data.data.unlockedbanks;
-          this.drawerVisible = true;
-        } else {
-          this.searching= false;
-          this.$message.error(res.data.meta.message);
-        }
-      })
+    edit_user(index, row, mode) {
+      this.drawerMode = mode;
+      if (mode === 1) {
+        this.$request.post("/codez/admin/user/info/", {
+          uid: row.uid,
+        }).then(res => {
+          if (res.data.meta.status === 200) {
+            this.edit_userform.uid = res.data.data.uid;
+            this.edit_userform.displayname = res.data.data.displayname;
+            this.edit_userform.age = res.data.data.age;
+            this.edit_userform.gender = res.data.data.gender;
+            this.edit_userform.zcoins = res.data.data.zcoins;
+            this.edit_userform.password = res.data.data.password;
+            this.edit_userform.school = res.data.data.school;
+            this.edit_userform.phonenumber = res.data.data.phonenumber;
+            this.edit_userform.thirdpartyauth = res.data.data.thirdpartyauth;
+            this.edit_userform.avatar = res.data.data.avatar;
+            this.edit_userform.description = res.data.data.description;
+            this.edit_userform.medals = res.data.data.medals;
+            this.edit_userform.displaymedals = res.data.data.displaymedals;
+            this.edit_userform.unlockedbanks = res.data.data.unlockedbanks;
+            this.drawerVisible = true;
+          } else {
+            this.$message.error(res.data.meta.message);
+          }
+        })
+      } else if (mode === 2) {
+        this.$request.post("/codez/admin/user/available_id/", {
+          mode: "newuser"
+        }).then(res => {
+          if (res.data.meta.status === 200) {
+            this.edit_userform = {
+              uid: res.data.data.new_uid,
+              password: "",
+              phonenumber: "",
+              thirdpartyauth: "",
+              displayname: "CodeZ用户" + res.data.data.new_uid,
+              age: -1,
+              gender: 0,
+              zcoins: 0,
+              avatar: "",
+              description: "",
+              school: "",
+              corrects: 0,
+              finishes: 0,
+              medals: "",
+              displaymedals: "",
+              unlockedbanks: "",
+            }
+            this.drawerVisible = true;
+          } else {
+            this.$message.error(res.data.meta.message);
+          }
+        })
+      }
     },
     drawerclose() {
       this.drawerVisible = false;
+    },
+    applychange() {
+      if (this.drawerMode === 1) {
+        if (this.edit_userform.displayname === "") {
+          this.$message.error("用户昵称不得为空")
+        } else if (this.edit_userform.password === "") {
+          this.$message.error("用户密码不得为空")
+        } else if (this.edit_userform.phonenumber === "") {
+          this.$message.error("用户手机号码不得为空")
+        } else if (!Number.isInteger(Number(this.edit_userform.phonenumber)) || String(this.edit_userform.phonenumber).length !== 11) {
+          this.$message.error("用户手机号码格式不正确")
+        } else if (!Number.isInteger(Number(this.edit_userform.zcoins)) || this.edit_userform.zcoins < 0) {
+          this.$message.error("用户ZCoins数量不正确")
+        } else if (!Number.isInteger(Number(this.edit_userform.age)) || this.edit_userform.age < -1) {
+          this.$message.error("用户年龄不正确")
+        } else if (!Number.isInteger(Number(this.edit_userform.corrects)) || this.edit_userform.corrects < 0) {
+          this.$message.error("用户答对题目数不正确")
+        } else if (!Number.isInteger(Number(this.edit_userform.finishes)) || this.edit_userform.finishes < 0) {
+          this.$message.error("用户完成题库数不正确")
+        } else {
+          this.$request.post("/codez/admin/user/change/", {
+            uid: this.edit_userform.uid,
+            password: this.edit_userform.password,
+            phonenumber: this.edit_userform.phonenumber,
+            thirdpartyauth: this.edit_userform.thirdpartyauth,
+            displayname: this.edit_userform.displayname,
+            zcoins: this.edit_userform.zcoins,
+            age: this.edit_userform.age,
+            gender: this.edit_userform.gender,
+            description: this.edit_userform.description,
+            school: this.edit_userform.school,
+            corrects: this.edit_userform.corrects,
+            finishes: this.edit_userform.finishes,
+            medals: this.edit_userform.medals,
+            unlockedbanks: this.edit_userform.unlockedbanks,
+          }).then(res => {
+            if (res.data.meta.status === 200) {
+              this.$message.success("修改成功")
+              this.drawerVisible = false;
+            } else {
+              this.$message.error(res.data.meta.message);
+            }
+          })
+        }
+      } else if (this.drawerMode === 2) {
+
+      }
     }
   }
 }
