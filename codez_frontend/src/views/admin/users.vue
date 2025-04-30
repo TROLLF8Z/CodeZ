@@ -10,6 +10,9 @@
     <el-form-item>
       <el-button type="primary" @click="search_user" :disabled="searching">搜索用户</el-button>
     </el-form-item>
+    <el-form-item>
+      <el-button type="success" @click="search_user" :disabled="searching">新增用户</el-button>
+    </el-form-item>
   </el-form>
   <el-divider />
 
@@ -34,8 +37,68 @@
     </el-table-column>
   </el-table>
 
-  <el-drawer :model-value="this.drawerVisible" title="编辑用户信息" :before-close="drawerclose">
-
+  <el-drawer :model-value="this.drawerVisible" :with-header="false" :before-close="drawerclose">
+    <div style="display: flex; align-items: center">
+      <el-text style="font-size: 20px; color: #333333; font-weight: 500;">编辑用户信息</el-text>
+      <el-button type="danger" autocomplete="off" @click="drawerclose" style="margin-left: auto"><el-icon class="el-icon--left"><CircleCloseFilled /></el-icon>关闭</el-button>
+    </div>
+    <el-divider />
+    <el-form :model="this.edit_userform" label-width="120px" label-position="right">
+      <el-text style="font-size: 16px; color: #000000; font-weight: 400; margin-bottom: 30px;">用户ID：{{ this.edit_userform.uid }}</el-text>
+      <el-form-item label="用户昵称" style="margin-top: 20px;">
+        <el-input placeholder="请输入用户昵称..." v-model="edit_userform.displayname" />
+      </el-form-item>
+      <el-form-item label="用户密码" style="margin-top: 20px;">
+        <el-input placeholder="请输入用户密码..." v-model="edit_userform.password" show-password />
+      </el-form-item>
+      <el-form-item label="用户手机号码" style="margin-top: 20px;">
+        <el-input placeholder="请输入用户手机号码..." v-model="edit_userform.phonenumber" />
+      </el-form-item>
+      <el-form-item label="第三方授权信息" style="margin-top: 20px;">
+        <el-input placeholder="请输入第三方授权信息.." v-model="edit_userform.thirdpartyauth" />
+      </el-form-item>
+      <el-form-item label="用户ZCoins数量" style="margin-top: 20px;">
+        <el-input placeholder="请输入用户ZCoins数量..." v-model="edit_userform.zcoins" />
+      </el-form-item>
+      <el-form-item label="用户年龄" style="margin-top: 20px;">
+        <el-input placeholder="请输入用户年龄..." v-model="edit_userform.age" />
+      </el-form-item>
+      <el-form-item label="用户性别" style="margin-top: 20px;">
+        <el-select
+            v-model="edit_userform.gender"
+            placeholder="选择性别"
+            style="width: 120px"
+        >
+          <el-option
+              v-for="item in genderSelect"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+          />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="用户简介" style="margin-top: 20px;">
+        <el-input placeholder="请输入用户简介..." v-model="edit_userform.description" />
+      </el-form-item>
+      <el-form-item label="用户就读院校" style="margin-top: 20px;">
+        <el-input placeholder="请输入用户就读院校" v-model="edit_userform.school" />
+      </el-form-item>
+      <el-form-item label="答对题目数" style="margin-top: 20px;">
+        <el-input placeholder="请输入答对题目数..." v-model="edit_userform.corrects" />
+      </el-form-item>
+      <el-form-item label="完成题库数" style="margin-top: 20px;">
+        <el-input placeholder="请输入完成题库数..." v-model="edit_userform.finishes" />
+      </el-form-item>
+      <el-form-item label="用户奖牌" style="margin-top: 20px;">
+        <el-input placeholder="请输入用户奖牌..." v-model="edit_userform.medals" />
+      </el-form-item>
+      <el-form-item label="用户已解锁题库" style="margin-top: 20px;">
+        <el-input placeholder="请输入用户已解锁题库..." v-model="edit_userform.unlockedbanks" />
+      </el-form-item>
+    </el-form>
+    <div style="display: flex; align-items: center; justify-content: center;">
+      <el-button type="success" autocomplete="off" @click="drawerclose">提交修改</el-button>
+    </div>
   </el-drawer>
 </template>
 
@@ -68,7 +131,26 @@ export default {
         medals: "",
         displaymedals: "",
         unlockedbanks: "",
-      }
+      },
+
+      genderSelect: [
+        {
+          value: "0",
+          label: "保密",
+        },
+        {
+          value: "1",
+          label: "男",
+        },
+        {
+          value: "2",
+          label: "女",
+        },
+        {
+          value: "3",
+          label: "非二元",
+        }
+      ],
 
     };
   },
@@ -108,7 +190,7 @@ export default {
       }).then(res => {
         if (res.data.meta.status === 200) {
           this.edit_userform.uid = res.data.data.uid;
-          this.edit_userform.name = res.data.data.displayname;
+          this.edit_userform.displayname = res.data.data.displayname;
           this.edit_userform.age = res.data.data.age;
           this.edit_userform.gender = res.data.data.gender;
           this.edit_userform.zcoins = res.data.data.zcoins;
