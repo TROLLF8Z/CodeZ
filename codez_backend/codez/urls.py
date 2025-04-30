@@ -24,8 +24,14 @@ urlpatterns = [
     path('login_admin/', views.Login_Admin_View.as_view()),
 
     # 管理员搜寻用户接口
-    path('admin/search_user/', views.Admin_Search_User_View.as_view()),
+    path('admin/user/search/', views.Admin_Search_User_View.as_view()),
 
     # 管理员获取用户所有信息接口
-    path('admin/user_info/', views.Admin_User_Info_View.as_view()),
+    path('admin/user/info/', views.Admin_User_Info_View.as_view()),
+
+    # 管理员获取可用的新UID接口
+    path('admin/user/available_id/', views.Admin_Available_ID_View.as_view()),
+
+    # 管理员修改用户所有信息接口
+    path('admin/user/change/', views.Admin_User_Change_View.as_view()),
 ]

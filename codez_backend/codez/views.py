@@ -12,22 +12,6 @@ import datetime
 import jwt
 import os
 
-# 前台注册接口
-class RegistryView(APIView):
-    def post(self, request):
-        ret = {
-            "data": {},
-            "meta": {
-                "status": 200,
-                "message": ""
-            }
-        }
-        username = request.data.get("accountNumber")
-        password = request.data.get("userPassword")
-        value = request.data.get("value")
-        if value == '1':
-            pass
-
 # 密码登录接口
 class Login_Pwd_View(APIView):
     def post(self, request):
@@ -95,7 +79,13 @@ class Registry_Phone_View(APIView):
             user = ZUser.objects.filter(phonenumber=phonenumber)
             if not user.count():
                 newuser = ZUser()
-                newuser.userid = 10000 + ZUser.objects.count() + 1
+                testo = True
+                newuid = 10000 + ZUser.objects.count()
+                while testo:
+                    newuid += 1
+                    tmpuser = ZUser.objects.filter(userid=newuid)
+                    testo = (tmpuser.count())
+                newuser.userid = newuid
                 newuser.phonenumber = phonenumber
                 newuser.password = password
                 newuser.save()
@@ -395,6 +385,98 @@ class Admin_User_Info_View(APIView):
                 ret['data']['unlockedbanks'] = userprofile.unlockedbanks
                 ret["meta"]["status"] = 200
                 ret["meta"]["message"] = "获取成功"
+                return Response(ret)
+            else:
+                ret["meta"]["status"] = 404
+                ret["meta"]["message"] = "用户ID不存在"
+                return Response(ret)
+
+        except Exception as error:
+            print(error)
+            ret["meta"]["status"] = 500
+            ret["meta"]["message"] = "内部错误"
+            return Response(ret)
+
+# 管理员获取可用新UID接口
+class Admin_Available_ID_View(APIView):
+    def post(self, request):
+        ret = {
+            "data": {},
+            "meta": {
+                "status": 200,
+                "message": ""
+            }
+        }
+        try:
+            result = True
+            newuid = 10000 + ZUser.objects.count()
+            while result:
+                newuid += 1
+                tmpuser = ZUser.objects.filter(userid=newuid)
+                result = (tmpuser.count())
+            ret['data']['new_uid'] = newuid
+            ret["meta"]["status"] = 200
+            ret["meta"]["message"] = "获取成功"
+            return Response(ret)
+
+        except Exception as error:
+            print(error)
+            ret["meta"]["status"] = 500
+            ret["meta"]["message"] = "内部错误"
+            return Response(ret)
+
+# 管理员修改用户所有信息接口
+class Admin_User_Change_View(APIView):
+    def post(self, request):
+        ret = {
+            "data": {},
+            "meta": {
+                "status": 200,
+                "message": ""
+            }
+        }
+        try:
+            uid = request.data["uid"]
+            password = request.data["password"]
+            phonenumber = request.data["phonenumber"]
+            thirdpartyauth = request.data["thirdpartyauth"]
+            displayname = request.data["displayname"]
+            zcoins = request.data["zcoins"]
+            age = request.data["age"]
+            gender = request.data["gender"]
+            school = request.data["school"]
+            description = request.data["description"]
+            corrects = request.data["corrects"]
+            finishes = request.data["finishes"]
+            medals = request.data["medals"]
+            unlockedbanks = request.data["unlockedbanks"]
+            user = ZUser.objects.filter(userid=int(uid))
+            userprofile = ZUserProfile.objects.filter(userid=int(uid))
+
+            if user.count():
+                user = user[0]
+                userprofile = userprofile[0]
+
+                user.password = password
+                user.phonenumber = phonenumber
+                user.thirdpartyauth = thirdpartyauth
+                user.save()
+
+                userprofile.displayname = displayname
+                userprofile.age = age
+                userprofile.gender = gender
+                userprofile.school = school
+                userprofile.zcoins = zcoins
+                userprofile.description = description
+                userprofile.corrects = corrects
+                userprofile.finishes = finishes
+                userprofile.medals = medals
+                userprofile.unlockedbanks = unlockedbanks
+                userprofile.save()
+
+                ret['data']['uid'] = user.userid
+                ret["meta"]["status"] = 200
+                ret["meta"]["message"] = "更改成功"
                 return Response(ret)
             else:
                 ret["meta"]["status"] = 404
