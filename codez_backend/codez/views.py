@@ -1,0 +1,408 @@
+from .TokenAuthtication import TokenAuthtication
+from rest_framework.response import Response
+from django.core.paginator import Paginator
+from django.db.models import Q
+from rest_framework.views import APIView
+from django.views import View
+from django.http import HttpResponse,JsonResponse
+from codez_backend import settings
+from .Serializer import *
+from .models import *
+import datetime
+import jwt
+import os
+
+# 前台注册接口
+class RegistryView(APIView):
+    def post(self, request):
+        ret = {
+            "data": {},
+            "meta": {
+                "status": 200,
+                "message": ""
+            }
+        }
+        username = request.data.get("accountNumber")
+        password = request.data.get("userPassword")
+        value = request.data.get("value")
+        if value == '1':
+            pass
+
+# 密码登录接口
+class Login_Pwd_View(APIView):
+    def post(self, request):
+        ret = {
+            "data": {},
+            "meta": {
+                "status": 200,
+                "message": ""
+            }
+        }
+        try:
+            phonenumber = request.data["phonenumber"]
+            password = request.data["password"]
+
+            user = ZUser.objects.filter(phonenumber=phonenumber, password=password)
+            if user.count() == 0:
+                ret["meta"]["status"] = 500
+                ret["meta"]["message"] = "用户不存在或密码错误"
+                return Response(ret)
+            elif user and user.first().password:
+                jwtdict = {
+                    "exp": datetime.datetime.now() + datetime.timedelta(days=1),  # 过期时间
+                    "iat": datetime.datetime.now(),  # 开始时间
+                    "uid": user.first().userid,
+                }
+                token = jwt.encode(jwtdict, settings.SECRET_KEY, algorithm="HS256")
+                userprofile = ZUserProfile.objects.filter(userid=user.first().userid)
+                ret["data"]["token"] = token
+                ret["data"]["userid"] = user.first().userid
+                ret["data"]["avatar"] = userprofile.first().avatar
+                ret["data"]["displayname"] = userprofile.first().displayname
+                ret["data"]["zcoins"] = userprofile.first().zcoins
+                ret["meta"]["status"] = 200
+                ret["meta"]["message"] = "登录成功"
+                return Response(ret)
+            else:
+                ret["meta"]["status"] = 500
+                ret["meta"]["message"] = "用户不存在或密码错误"
+                return Response(ret)
+        except Exception as error:
+            print(error)
+            ret["meta"]["status"] = 500
+            ret["meta"]["message"] = "内部错误"
+            return Response(ret)
+
+# 短信登录接口
+class Login_Sms_View(APIView):
+    def post(self, request):
+        pass
+
+# 手机号注册接口
+class Registry_Phone_View(APIView):
+    def post(self, request):
+        ret = {
+            "data": {},
+            "meta": {
+                "status": 200,
+                "message": ""
+            }
+        }
+        try:
+            phonenumber = request.data["phonenumber"]
+            password = request.data["password"]
+
+            user = ZUser.objects.filter(phonenumber=phonenumber)
+            if not user.count():
+                newuser = ZUser()
+                newuser.userid = 10000 + ZUser.objects.count() + 1
+                newuser.phonenumber = phonenumber
+                newuser.password = password
+                newuser.save()
+
+                newuserprofile = ZUserProfile()
+                newuserprofile.userid = newuser.userid
+                newuserprofile.displayname = 'CodeZ用户' + str(newuserprofile.userid)
+                newuserprofile.zcoins = 0
+                newuserprofile.age = -1
+                newuserprofile.gender = 0
+                newuserprofile.save()
+
+                ret["meta"]["status"] = 200
+                ret["meta"]["message"] = "嘻嘻嘻哈"
+                return Response(ret)
+            else:
+                ret["meta"]["status"] = 500
+                ret["meta"]["message"] = "该手机号码已被使用"
+                return Response(ret)
+
+        except Exception as error:
+            ret["meta"]["status"] = 500
+            ret["meta"]["message"] = "内部错误"
+            return Response(ret)
+
+# 头像上传接口
+class Avatar_Upload_View(APIView):
+    def post(self, request):
+        ret = {
+            "data": {},
+            "meta": {
+                "status": 200,
+                "message": ""
+            }
+        }
+        try:
+            suffix = request.data['file'].name.split('.')[-1]
+            with open('../codez_frontend/src/assets/avatar/' + request.data['uid'] + '.' + suffix, 'wb') as f:
+                f.write(request.data['file'].file.read())
+            user = ZUserProfile.objects.filter(userid=int(request.data['uid']))
+            if user.count():
+                user = user[0]
+                user.avatar = 'src/assets/avatar/' + request.data['uid'] + '.' + suffix
+                user.save()
+            ret["data"]["avatar"] = 'src/assets/avatar/' + request.data['uid'] + '.' + suffix
+            ret["meta"]["status"] = 200
+            ret["meta"]["message"] = "上传成功"
+            return Response(ret)
+        except Exception as error:
+            ret["meta"]["status"] = 500
+            ret["meta"]["message"] = "内部错误"
+            return Response(ret)
+
+# 用户功能信息获取接口
+class User_Profile_View(APIView):
+    def post(self, request):
+        ret = {
+            "data": {},
+            "meta": {
+                "status": 200,
+                "message": ""
+            }
+        }
+        try:
+            userid = request.data["userid"]
+            user = ZUserProfile.objects.filter(userid=userid)
+            if user.count():
+                ret['data']['avatar'] = user.first().avatar
+                ret['data']['displayname'] = user.first().displayname
+                ret['data']['zcoins'] = user.first().zcoins
+                ret['data']['description'] = user.first().description
+                ret['data']['age'] = user.first().age
+                ret['data']['gender'] = user.first().gender
+                ret['data']['school'] = user.first().school
+                ret['data']['corrects'] = user.first().corrects
+                ret['data']['finishes'] = user.first().finishes
+                ret['data']['medals'] = user.first().medals
+                ret['data']['displaymedals'] = user.first().displaymedals
+                ret["meta"]["status"] = 200
+                ret["meta"]["message"] = "获取成功"
+                return Response(ret)
+            else:
+                ret["meta"]["status"] = 404
+                ret["meta"]["message"] = "该用户不存在"
+                return Response(ret)
+        except Exception as error:
+            ret["meta"]["status"] = 500
+            ret["meta"]["message"] = "内部错误"
+            return Response(ret)
+
+# 用户更改名称接口
+class User_Change_Name_View(APIView):
+    def post(self, request):
+        ret = {
+            "data": {},
+            "meta": {
+                "status": 200,
+                "message": ""
+            }
+        }
+        try:
+            displayname = request.data["displayname"]
+            user = ZUserProfile.objects.filter(userid=int(request.data["userid"]))
+            if user.count():
+                user = user[0]
+                user.displayname = displayname
+                user.save()
+                ret["meta"]["status"] = 200
+                ret["meta"]["message"] = "更改成功"
+                return Response(ret)
+            else:
+                ret["meta"]["status"] = 404
+                ret["meta"]["message"] = "该用户不存在"
+                return Response(ret)
+        except Exception as error:
+            ret["meta"]["status"] = 500
+            ret["meta"]["message"] = "内部错误"
+            return Response(ret)
+
+# 用户更改简介接口
+class User_Change_Desc_View(APIView):
+    def post(self, request):
+        ret = {
+            "data": {},
+            "meta": {
+                "status": 200,
+                "message": ""
+            }
+        }
+        try:
+            description = request.data["description"]
+            user = ZUserProfile.objects.filter(userid=int(request.data["userid"]))
+            if user.count():
+                user = user[0]
+                user.description = description
+                user.save()
+                ret["meta"]["status"] = 200
+                ret["meta"]["message"] = "更改成功"
+                return Response(ret)
+            else:
+                ret["meta"]["status"] = 404
+                ret["meta"]["message"] = "该用户不存在"
+                return Response(ret)
+        except Exception as error:
+            ret["meta"]["status"] = 500
+            ret["meta"]["message"] = "内部错误"
+            return Response(ret)
+
+# 用户更改年龄、性别、院校接口
+class User_Change_Info_View(APIView):
+    def post(self, request):
+        ret = {
+            "data": {},
+            "meta": {
+                "status": 200,
+                "message": ""
+            }
+        }
+        try:
+            gender = request.data["gender"]
+            age = request.data["age"]
+            school = request.data["school"]
+            user = ZUserProfile.objects.filter(userid=int(request.data["userid"]))
+            if user.count():
+                user = user[0]
+                user.gender = gender
+                user.age = age
+                user.school = school
+                user.save()
+                ret["meta"]["status"] = 200
+                ret["meta"]["message"] = "更改成功"
+                return Response(ret)
+            else:
+                ret["meta"]["status"] = 404
+                ret["meta"]["message"] = "该用户不存在"
+                return Response(ret)
+        except Exception as error:
+            ret["meta"]["status"] = 500
+            ret["meta"]["message"] = "内部错误"
+            return Response(ret)
+
+# 管理员登录接口
+class Login_Admin_View(APIView):
+    def post(self, request):
+        ret = {
+            "data": {},
+            "meta": {
+                "status": 200,
+                "message": ""
+            }
+        }
+        try:
+            aid = request.data["aid"]
+            password = request.data["password"]
+
+            user = ZAdmin.objects.filter(adminid=aid, password=password)
+            if not user.count():
+                ret["meta"]["status"] = 500
+                ret["meta"]["message"] = "管理员不存在或密码错误"
+                return Response(ret)
+            elif user and user.first().password:
+                jwtdict = {
+                    "exp": datetime.datetime.now() + datetime.timedelta(days=1),  # 过期时间
+                    "iat": datetime.datetime.now(),  # 开始时间
+                    "aid": user.first().adminid,
+                }
+                token = jwt.encode(jwtdict, settings.SECRET_KEY, algorithm="HS256")
+                ret["data"]["token"] = token
+                ret["data"]["adminid"] = aid
+                ret["data"]["adminname"] = user.first().adminname
+                ret["meta"]["status"] = 200
+                ret["meta"]["message"] = "登录成功"
+                return Response(ret)
+            else:
+                ret["meta"]["status"] = 500
+                ret["meta"]["message"] = "管理员不存在或密码错误"
+                return Response(ret)
+        except Exception as error:
+            print(error)
+            ret["meta"]["status"] = 500
+            ret["meta"]["message"] = "内部错误"
+            return Response(ret)
+
+# 管理员搜寻用户接口
+class Admin_Search_User_View(APIView):
+    def post(self, request):
+        ret = {
+            "data": {
+                "search_results": [],
+            },
+            "meta": {
+                "status": 200,
+                "message": ""
+            }
+        }
+        try:
+            uid = request.data["uid"]
+            name = request.data["displayname"]
+            filters = Q()
+            if uid:
+                filters = filters & Q(userid=int(uid))
+            if name:
+                filters = filters & Q(displayname=name)
+
+            user = ZUserProfile.objects.filter(filters)
+            if user.count():
+                for u in user:
+                    tmpobj = {'uid': u.userid, 'username': u.displayname}
+                    ret["data"]["search_results"].append(tmpobj)
+                ret["meta"]["status"] = 200
+                ret["meta"]["message"] = "搜寻成功"
+                return Response(ret)
+            else:
+                ret["meta"]["status"] = 404
+                ret["meta"]["message"] = "搜寻结果为空"
+                return Response(ret)
+
+        except Exception as error:
+            print(error)
+            ret["meta"]["status"] = 500
+            ret["meta"]["message"] = "内部错误"
+            return Response(ret)
+
+# 管理员查看用户所有信息接口
+class Admin_User_Info_View(APIView):
+    def post(self, request):
+        ret = {
+            "data": {},
+            "meta": {
+                "status": 200,
+                "message": ""
+            }
+        }
+        try:
+            uid = request.data["uid"]
+            user = ZUser.objects.filter(userid=int(uid))
+            userprofile = ZUserProfile.objects.filter(userid=int(uid))
+
+            if user.count():
+                user = user[0]
+                userprofile = userprofile[0]
+                ret['data']['uid'] = user.userid
+                ret['data']['password'] = user.password
+                ret['data']['phonenumber'] = user.phonenumber
+                ret['data']['thirdpartyauth'] = user.thirdpartyauth
+                ret['data']['displayname'] = userprofile.displayname
+                ret['data']['age'] = userprofile.age
+                ret['data']['gender'] = userprofile.gender
+                ret['data']['school'] = userprofile.school
+                ret['data']['zcoins'] = userprofile.zcoins
+                ret['data']['avatar'] = userprofile.avatar
+                ret['data']['description'] = userprofile.description
+                ret['data']['corrects'] = userprofile.corrects
+                ret['data']['finishes'] = userprofile.finishes
+                ret['data']['medals'] = userprofile.medals
+                ret['data']['displaymedals'] = userprofile.displaymedals
+                ret['data']['unlockedbanks'] = userprofile.unlockedbanks
+                ret["meta"]["status"] = 200
+                ret["meta"]["message"] = "获取成功"
+                return Response(ret)
+            else:
+                ret["meta"]["status"] = 404
+                ret["meta"]["message"] = "用户ID不存在"
+                return Response(ret)
+
+        except Exception as error:
+            print(error)
+            ret["meta"]["status"] = 500
+            ret["meta"]["message"] = "内部错误"
+            return Response(ret)
