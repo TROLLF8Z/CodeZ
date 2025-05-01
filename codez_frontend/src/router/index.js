@@ -91,7 +91,7 @@ router.beforeEach((to, from, next) => {
       next({
         path: "/main",
       });
-    } else if (to.path == '/admin/main') {
+    } else if (to.path == '/admin/users') {
       if (aid) {
         next();
       } else {
@@ -102,7 +102,7 @@ router.beforeEach((to, from, next) => {
     } else if (to.path == '/admin/login') {
       if (aid) {
         next({
-          path: "/admin/main",
+          path: "/admin/users",
         });
       } else {
         next();

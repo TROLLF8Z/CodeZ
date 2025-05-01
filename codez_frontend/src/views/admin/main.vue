@@ -24,8 +24,8 @@
                  background-color="#011528" text-color="hsla(0,0%,100%,.65)" >
           <div>
             <el-menu-item index="/admin/users"><el-icon><User /></el-icon>用户管理</el-menu-item>
-            <el-menu-item index="/cs/csgl"><el-icon><Box /></el-icon>题库管理</el-menu-item>
-            <el-menu-item index="/sp/spgl"><el-icon><Document /></el-icon>题目管理</el-menu-item>
+            <el-menu-item index="/admin/banks"><el-icon><Box /></el-icon>题库管理</el-menu-item>
+            <el-menu-item index="/admin/questions"><el-icon><Document /></el-icon>题目管理</el-menu-item>
           </div>
         </el-menu>
       </el-aside>

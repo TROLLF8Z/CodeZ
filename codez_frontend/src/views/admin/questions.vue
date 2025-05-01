@@ -1,29 +1,29 @@
 <template>
-  <el-text style="font-size: 20px; color: #409EFF; font-weight: 500;">根据UID或昵称搜索用户</el-text>
-  <el-form :model="userform" label-width="120px" style="margin-top: 30px;" label-position="right" :inline="true">
-    <el-form-item label="用户UID">
-      <el-input placeholder="请输入用户UID..." v-model="userform.userId" @keyup.enter.native="search_user" />
+  <el-text style="font-size: 20px; color: #409EFF; font-weight: 500;">根据题目ID搜索题目</el-text>
+  <el-form :model="questionform" label-width="120px" style="margin-top: 30px;" label-position="right" :inline="true">
+    <el-form-item label="题目ID">
+      <el-input placeholder="请输入题目ID..." v-model="questionform.questionId" @keyup.enter.native="search_question" />
     </el-form-item>
-    <el-form-item label="用户昵称">
-      <el-input placeholder="请输入用户昵称..." v-model="userform.userName" @keyup.enter.native="search_user" />
-    </el-form-item>
-    <el-form-item>
-      <el-button type="primary" @click="search_user" :disabled="searching">搜索用户</el-button>
+    <el-form-item label="题目名称">
+      <el-input placeholder="请输入题目名称..." v-model="questionform.questionName" @keyup.enter.native="search_question" />
     </el-form-item>
     <el-form-item>
-      <el-button type="success" @click="edit_user(0, 0, 2)" :disabled="searching">新增用户</el-button>
+      <el-button type="primary" @click="search_question" :disabled="searching">搜索题目</el-button>
+    </el-form-item>
+    <el-form-item>
+      <el-button type="success" @click="edit_question(0, 0, 2)" :disabled="searching">新增题目</el-button>
     </el-form-item>
   </el-form>
   <el-divider />
 
   <el-table :data="this.resultform" stripe border>
-    <el-table-column label="用户ID" prop="uid">
+    <el-table-column label="题目ID" prop="uid">
       <template #default="scope">
-        <div style="display: flex; align-items: center"><el-text style="font-size: 16px; color: #000000; font-weight: 400;">{{ scope.row.uid }}</el-text></div>
+        <div style="display: flex; align-items: center"><el-text style="font-size: 16px; color: #000000; font-weight: 400;">{{ scope.row.qid }}</el-text></div>
       </template>
     </el-table-column>
 
-    <el-table-column label="用户昵称" prop="name">
+    <el-table-column label="题目名称" prop="name">
       <template #default="scope">
         <div style="display: flex; align-items: center"><el-text style="font-size: 16px; color: #000000; font-weight: 400;">{{ scope.row.name }}</el-text></div>
       </template>
@@ -39,61 +39,38 @@
 
   <el-drawer :model-value="this.drawerVisible" :with-header="false" :before-close="drawerclose">
     <div style="display: flex; align-items: center">
-      <el-text style="font-size: 20px; color: #333333; font-weight: 500;">编辑用户信息</el-text>
+      <el-text style="font-size: 20px; color: #333333; font-weight: 500;">编辑题目内容</el-text>
       <el-button type="danger" autocomplete="off" @click="drawerclose" style="margin-left: auto"><el-icon class="el-icon--left"><CircleCloseFilled /></el-icon>关闭</el-button>
     </div>
     <el-divider />
-    <el-form :model="this.edit_userform" label-width="120px" label-position="right">
-      <el-text style="font-size: 16px; color: #000000; font-weight: 400; margin-bottom: 30px;">用户ID：{{ this.edit_userform.uid }}</el-text>
-      <el-form-item label="用户昵称" style="margin-top: 20px;">
-        <el-input placeholder="请输入用户昵称..." v-model="edit_userform.displayname" />
+    <el-form :model="this.edit_qform" label-width="120px" label-position="right">
+      <el-text style="font-size: 16px; color: #000000; font-weight: 400; margin-bottom: 30px;">题目ID：{{ this.edit_qform.qid }}</el-text>
+
+      <el-form-item label="题目名称" style="margin-top: 20px;">
+        <el-input placeholder="请输入题目名称..." v-model="edit_qform.name" />
       </el-form-item>
-      <el-form-item label="用户密码" style="margin-top: 20px;">
-        <el-input placeholder="请输入用户密码..." v-model="edit_userform.password" show-password />
-      </el-form-item>
-      <el-form-item label="用户手机号码" style="margin-top: 20px;">
-        <el-input placeholder="请输入用户手机号码..." v-model="edit_userform.phonenumber" />
-      </el-form-item>
-      <el-form-item label="第三方授权信息" style="margin-top: 20px;">
-        <el-input placeholder="请输入第三方授权信息.." v-model="edit_userform.thirdpartyauth" />
-      </el-form-item>
-      <el-form-item label="用户ZCoins数量" style="margin-top: 20px;">
-        <el-input placeholder="请输入用户ZCoins数量..." v-model="edit_userform.zcoins" />
-      </el-form-item>
-      <el-form-item label="用户年龄" style="margin-top: 20px;">
-        <el-input placeholder="请输入用户年龄..." v-model="edit_userform.age" />
-      </el-form-item>
-      <el-form-item label="用户性别" style="margin-top: 20px;">
+
+      <el-form-item label="题目类型" style="margin-top: 20px;">
         <el-select
-            v-model="edit_userform.gender"
-            placeholder="选择性别"
+            v-model="edit_qform.type"
+            placeholder="选择题目类型"
             style="width: 120px"
         >
           <el-option
-              v-for="item in genderSelect"
+              v-for="item in typeSelect"
               :key="item.value"
               :label="item.label"
               :value="item.value"
           />
         </el-select>
       </el-form-item>
-      <el-form-item label="用户简介" style="margin-top: 20px;">
-        <el-input placeholder="请输入用户简介..." v-model="edit_userform.description" />
+
+      <el-form-item label="题目内容" style="margin-top: 20px;">
+        <el-input type="textarea" placeholder="请输入题目内容..." v-model="edit_qform.content" />
       </el-form-item>
-      <el-form-item label="用户就读院校" style="margin-top: 20px;">
-        <el-input placeholder="请输入用户就读院校" v-model="edit_userform.school" />
-      </el-form-item>
-      <el-form-item label="答对题目数" style="margin-top: 20px;">
-        <el-input placeholder="请输入答对题目数..." v-model="edit_userform.corrects" />
-      </el-form-item>
-      <el-form-item label="完成题库数" style="margin-top: 20px;">
-        <el-input placeholder="请输入完成题库数..." v-model="edit_userform.finishes" />
-      </el-form-item>
-      <el-form-item label="用户奖牌" style="margin-top: 20px;">
-        <el-input placeholder="请输入用户奖牌..." v-model="edit_userform.medals" />
-      </el-form-item>
-      <el-form-item label="用户已解锁题库" style="margin-top: 20px;">
-        <el-input placeholder="请输入用户已解锁题库..." v-model="edit_userform.unlockedbanks" />
+
+      <el-form-item label="题目答案" style="margin-top: 20px;">
+        <el-input type="textarea" placeholder="请输入题目答案..." v-model="edit_qform.answer" />
       </el-form-item>
     </el-form>
     <div style="display: flex; align-items: center; justify-content: center;">
@@ -106,74 +83,62 @@
 export default {
   data() {
     return {
-      userform: {
-        userId: '',
-        userName: '',
+      questionform: {
+        questionId: '',
+        questionName: '',
       },
       searching: false,
       resultform: [],
       drawerVisible: false,
       drawerMode: -1,
 
-      edit_userform: {
-        uid: 0,
-        password: "",
-        phonenumber: "",
-        thirdpartyauth: "",
-        displayname: "",
-        age: 0,
-        gender: 0,
-        zcoins: 0,
-        avatar: "",
-        description: "",
-        school: "",
-        corrects: 0,
-        finishes: 0,
-        medals: "",
-        displaymedals: "",
-        unlockedbanks: "",
+      edit_qform: {
+        qid: '',
+        name: '',
+        type: 0,
+        content: '',
+        answer: '',
       },
 
-      genderSelect: [
+      typeSelect: [
         {
           value: "0",
-          label: "保密",
+          label: "选择题",
         },
         {
           value: "1",
-          label: "男",
+          label: "填空题",
         },
         {
           value: "2",
-          label: "女",
+          label: "简答题",
         },
         {
           value: "3",
-          label: "非二元",
+          label: "编程题",
         }
       ],
-
     };
   },
 
   methods: {
-    search_user() {
+    search_question() {
       this.searching = true;
-      if (this.userform.userId === "" && this.userform.userName === "") {
+      if (this.questionform.questionId === "" && this.questionform.questionName === "") {
         this.$message.error("请至少输入一个查询条件")
         this.searching = false;
       } else {
-        this.$request.post("/codez/admin/user/search/", {
-          uid: this.userform.userId,
-          displayname: this.userform.userName,
+        this.$request.post("/codez/admin/questions/search/", {
+          qid: this.questionform.questionId,
+          name: this.questionform.questionName,
         }).then(res => {
           if (res.data.meta.status === 200) {
             this.resultform= [];
-            let user = {};
-            for (user of res.data.data.search_results) {
+            let q= {};
+            for (q of res.data.data.search_results) {
               this.resultform.push({
-                "uid": user.uid,
-                "name": user.username,
+                "qid": q.qid,
+                "name": q.username,
               })
             }
             this.searching = false;
@@ -184,111 +149,58 @@ export default {
         });
       }
     },
-
-    edit_user(index, row, mode) {
-      this.drawerMode = mode;
-      if (mode === 1) {
-        this.$request.post("/codez/admin/user/info/", {
-          uid: row.uid,
-        }).then(res => {
-          if (res.data.meta.status === 200) {
-            this.edit_userform.uid = res.data.data.uid;
-            this.edit_userform.displayname = res.data.data.displayname;
-            this.edit_userform.age = res.data.data.age;
-            this.edit_userform.gender = res.data.data.gender;
-            this.edit_userform.zcoins = res.data.data.zcoins;
-            this.edit_userform.password = res.data.data.password;
-            this.edit_userform.school = res.data.data.school;
-            this.edit_userform.phonenumber = res.data.data.phonenumber;
-            this.edit_userform.thirdpartyauth = res.data.data.thirdpartyauth;
-            this.edit_userform.avatar = res.data.data.avatar;
-            this.edit_userform.description = res.data.data.description;
-            this.edit_userform.medals = res.data.data.medals;
-            this.edit_userform.displaymedals = res.data.data.displaymedals;
-            this.edit_userform.unlockedbanks = res.data.data.unlockedbanks;
-            this.drawerVisible = true;
-          } else {
-            this.$message.error(res.data.meta.message);
-          }
-        })
-      } else if (mode === 2) {
-        this.$request.post("/codez/admin/user/available_id/", {
-          mode: "newuser"
-        }).then(res => {
-          if (res.data.meta.status === 200) {
-            this.edit_userform = {
-              uid: res.data.data.new_uid,
-              password: "",
-              phonenumber: "",
-              thirdpartyauth: "",
-              displayname: "CodeZ用户" + res.data.data.new_uid,
-              age: -1,
-              gender: 0,
-              zcoins: 0,
-              avatar: "",
-              description: "",
-              school: "",
-              corrects: 0,
-              finishes: 0,
-              medals: "",
-              displaymedals: "",
-              unlockedbanks: "",
-            }
-            this.drawerVisible = true;
-          } else {
-            this.$message.error(res.data.meta.message);
-          }
-        })
-      }
-    },
     drawerclose() {
       this.drawerVisible = false;
     },
+    edit_question(index, row, mode) {
+      this.drawerMode = mode;
+      if (mode === 1) {
+
+      } else if (mode === 2) {
+        this.$request.post("/codez/admin/questions/available_id/", {
+          mode: "newquestion",
+        }).then(res => {
+          if (res.data.meta.status === 200) {
+            this.edit_qform= {
+              qid: res.data.data.new_qid,
+              name: '',
+              type: 0,
+              content: '',
+              answer: '',
+            };
+            this.drawerVisible = true;
+          } else {
+            this.$message.error(res.data.meta.message);
+          }
+        });
+      }
+    },
     applychange() {
-      if (this.drawerMode === 1) {
-        if (this.edit_userform.displayname === "") {
-          this.$message.error("用户昵称不得为空")
-        } else if (this.edit_userform.password === "") {
-          this.$message.error("用户密码不得为空")
-        } else if (this.edit_userform.phonenumber === "") {
-          this.$message.error("用户手机号码不得为空")
-        } else if (!Number.isInteger(Number(this.edit_userform.phonenumber)) || String(this.edit_userform.phonenumber).length !== 11) {
-          this.$message.error("用户手机号码格式不正确")
-        } else if (!Number.isInteger(Number(this.edit_userform.zcoins)) || this.edit_userform.zcoins < 0) {
-          this.$message.error("用户ZCoins数量不正确")
-        } else if (!Number.isInteger(Number(this.edit_userform.age)) || this.edit_userform.age < -1) {
-          this.$message.error("用户年龄不正确")
-        } else if (!Number.isInteger(Number(this.edit_userform.corrects)) || this.edit_userform.corrects < 0) {
-          this.$message.error("用户答对题目数不正确")
-        } else if (!Number.isInteger(Number(this.edit_userform.finishes)) || this.edit_userform.finishes < 0) {
-          this.$message.error("用户完成题库数不正确")
-        } else {
-          this.$request.post("/codez/admin/user/change/", {
-            uid: this.edit_userform.uid,
-            password: this.edit_userform.password,
-            phonenumber: this.edit_userform.phonenumber,
-            thirdpartyauth: this.edit_userform.thirdpartyauth,
-            displayname: this.edit_userform.displayname,
-            zcoins: this.edit_userform.zcoins,
-            age: this.edit_userform.age,
-            gender: this.edit_userform.gender,
-            description: this.edit_userform.description,
-            school: this.edit_userform.school,
-            corrects: this.edit_userform.corrects,
-            finishes: this.edit_userform.finishes,
-            medals: this.edit_userform.medals,
-            unlockedbanks: this.edit_userform.unlockedbanks,
+      if (this.edit_qform.name === '') {
+        this.$message.error("题目名称不得为空")
+      } else if (this.edit_qform.content === '') {
+        this.$message.error("题目内容不得为空")
+      } else if (this.edit_qform.answer === '') {
+        this.$message.error("题目答案不得为空")
+      } else {
+        if (this.drawerMode === 1) {
+
+        } else if (this.drawerMode === 2) {
+          this.$request.post("/codez/admin/questions/create/", {
+            qid: this.edit_qform.qid,
+            name: this.edit_qform.name,
+            type: this.edit_qform.type,
+            content: this.edit_qform.content,
+            answer: this.edit_qform.answer,
           }).then(res => {
             if (res.data.meta.status === 200) {
-              this.$message.success("修改成功")
+              this.$message.success("成功新增题目, 题目ID为：" + String(this.edit_qform.qid));
               this.drawerVisible = false;
             } else {
               this.$message.error(res.data.meta.message);
             }
-          })
+          });
         }
-      } else if (this.drawerMode === 2) {
-
       }
     }
   }
