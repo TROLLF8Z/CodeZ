@@ -34,4 +34,16 @@ urlpatterns = [
 
     # 管理员修改用户所有信息接口
     path('admin/user/change/', views.Admin_User_Change_View.as_view()),
+
+    # 管理员获取可用的新题目ID接口
+    path('admin/questions/available_id/', views.Admin_Question_ID_View.as_view()),
+
+    # 管理员新增题目接口
+    path('admin/questions/create/', views.Admin_Question_Create_View.as_view()),
+
+    # 管理员获取题目内容接口
+    path('admin/questions/info/', views.Admin_Question_Info_View.as_view()),
+
+    # 管理员搜寻题目接口
+    path('admin/questions/search/', views.Admin_Search_Question_View.as_view()),
 ]

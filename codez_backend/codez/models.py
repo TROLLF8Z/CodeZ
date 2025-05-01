@@ -37,6 +37,7 @@ class Bank(models.Model):
 # 题目内容ORM模型
 class Question(models.Model):
     questionid = models.BigIntegerField(primary_key=True, max_length=15, unique=True)
+    name = models.CharField(max_length=50, default="")
     type = models.IntegerField(max_length=1)
     content = models.CharField(max_length=255)
     answer = models.CharField(max_length=255)

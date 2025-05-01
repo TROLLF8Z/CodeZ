@@ -488,3 +488,148 @@ class Admin_User_Change_View(APIView):
             ret["meta"]["status"] = 500
             ret["meta"]["message"] = "内部错误"
             return Response(ret)
+
+# 管理员获取可用新题目ID接口
+class Admin_Question_ID_View(APIView):
+    def post(self, request):
+        ret = {
+            "data": {},
+            "meta": {
+                "status": 200,
+                "message": ""
+            }
+        }
+        try:
+            result = True
+            newqid = 100000 + Question.objects.count()
+            while result:
+                newqid += 1
+                tmpquestion = Question.objects.filter(questionid=newqid)
+                result = (tmpquestion.count())
+            ret['data']['new_qid'] = newqid
+            ret["meta"]["status"] = 200
+            ret["meta"]["message"] = "获取成功"
+            return Response(ret)
+
+        except Exception as error:
+            print(error)
+            ret["meta"]["status"] = 500
+            ret["meta"]["message"] = "内部错误"
+            return Response(ret)
+
+# 管理员新增题目接口
+class Admin_Question_Create_View(APIView):
+    def post(self, request):
+        ret = {
+            "data": {},
+            "meta": {
+                "status": 200,
+                "message": ""
+            }
+        }
+        try:
+            qid = request.data["qid"]
+            name = request.data["name"]
+            type = request.data["type"]
+            content = request.data["content"]
+            answer = request.data["answer"]
+
+            question = Question.objects.filter(questionid=qid)
+            if not question.count():
+                newq = Question()
+                newq.questionid = qid
+                newq.name = name
+                newq.type = type
+                newq.content = content
+                newq.answer = answer
+                newq.save()
+
+                ret["meta"]["status"] = 200
+                ret["meta"]["message"] = "新增成功"
+                return Response(ret)
+            else:
+                ret["meta"]["status"] = 500
+                ret["meta"]["message"] = "该题目ID已存在"
+                return Response(ret)
+
+        except Exception as error:
+            print(error)
+            ret["meta"]["status"] = 500
+            ret["meta"]["message"] = "内部错误"
+            return Response(ret)
+
+# 管理员获取题目内容接口
+class Admin_Question_Info_View(APIView):
+    def post(self, request):
+        ret = {
+            "data": {},
+            "meta": {
+                "status": 200,
+                "message": ""
+            }
+        }
+        try:
+            qid = request.data["qid"]
+
+            question = Question.objects.filter(questionid=qid)
+            if question.count():
+                question = question[0]
+                ret["data"]["qid"] = qid
+                ret["data"]["name"] = question.name
+                ret["data"]["type"] = question.type
+                ret["data"]["content"] = question.content
+                ret["data"]["answer"] = question.answer
+
+                ret["meta"]["status"] = 200
+                ret["meta"]["message"] = "新增成功"
+                return Response(ret)
+            else:
+                ret["meta"]["status"] = 500
+                ret["meta"]["message"] = "该题目ID不存在"
+                return Response(ret)
+
+        except Exception as error:
+            print(error)
+            ret["meta"]["status"] = 500
+            ret["meta"]["message"] = "内部错误"
+            return Response(ret)
+
+# 管理员搜寻题目接口
+class Admin_Search_Question_View(APIView):
+    def post(self, request):
+        ret = {
+            "data": {
+                "search_results": [],
+            },
+            "meta": {
+                "status": 200,
+                "message": ""
+            }
+        }
+        try:
+            qid = request.data["qid"]
+            name = request.data["name"]
+            filters = Q()
+            if qid:
+                filters = filters & Q(questionid=int(qid))
+            if name:
+                filters = filters & Q(name=name)
+
+            question = Question.objects.filter(filters)
+            if question.count():
+                for u in question:
+                    tmpobj = {'qid': u.questionid, 'username': u.name}
+                    ret["data"]["search_results"].append(tmpobj)
+                ret["meta"]["status"] = 200
+                ret["meta"]["message"] = "搜寻成功"
+                return Response(ret)
+            else:
+                ret["meta"]["status"] = 404
+                ret["meta"]["message"] = "搜寻结果为空"
+                return Response(ret)
+
+        except Exception as error:
+            print(error)
+            ret["meta"]["status"] = 500
+            ret["meta"]["message"] = "内部错误"
+            return Response(ret)
