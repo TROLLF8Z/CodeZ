@@ -1,29 +1,29 @@
 <template>
-  <el-text style="font-size: 20px; color: #409EFF; font-weight: 500;">根据题目ID搜索题目</el-text>
-  <el-form :model="questionform" label-width="120px" style="margin-top: 30px;" label-position="right" :inline="true">
-    <el-form-item label="题目ID">
-      <el-input placeholder="请输入题目ID..." v-model="questionform.questionId" @keyup.enter.native="search_question" />
+  <el-text style="font-size: 20px; color: #409EFF; font-weight: 500;">根据题库ID搜索题库</el-text>
+  <el-form :model="bankform" label-width="120px" style="margin-top: 30px;" label-position="right" :inline="true">
+    <el-form-item label="题库ID">
+      <el-input placeholder="请输入题库ID..." v-model="bankform.bankId" @keyup.enter.native="search_bank" />
     </el-form-item>
-    <el-form-item label="题目名称">
-      <el-input placeholder="请输入题目名称..." v-model="questionform.questionName" @keyup.enter.native="search_question" />
-    </el-form-item>
-    <el-form-item>
-      <el-button type="primary" @click="search_question" :disabled="searching">搜索题目</el-button>
+    <el-form-item label="题库名称">
+      <el-input placeholder="请输入题库名称..." v-model="bankform.bankName" @keyup.enter.native="search_bank" />
     </el-form-item>
     <el-form-item>
-      <el-button type="success" @click="edit_question(0, 0, 2)" :disabled="searching">新增题目</el-button>
+      <el-button type="primary" @click="search_bank" :disabled="searching">搜索题库</el-button>
+    </el-form-item>
+    <el-form-item>
+      <el-button type="success" @click="edit_bank(0, 0, 2)" :disabled="searching">新增题库</el-button>
     </el-form-item>
   </el-form>
   <el-divider />
 
   <el-table :data="this.resultform" stripe border>
-    <el-table-column label="题目ID" prop="qid">
+    <el-table-column label="题库ID" prop="bid">
       <template #default="scope">
-        <div style="display: flex; align-items: center"><el-text style="font-size: 16px; color: #000000; font-weight: 400;">{{ scope.row.qid }}</el-text></div>
+        <div style="display: flex; align-items: center"><el-text style="font-size: 16px; color: #000000; font-weight: 400;">{{ scope.row.bid }}</el-text></div>
       </template>
     </el-table-column>
 
-    <el-table-column label="题目名称" prop="name">
+    <el-table-column label="题库名称" prop="name">
       <template #default="scope">
         <div style="display: flex; align-items: center"><el-text style="font-size: 16px; color: #000000; font-weight: 400;">{{ scope.row.name }}</el-text></div>
       </template>
@@ -31,7 +31,7 @@
 
     <el-table-column label="操作">
       <template #default="scope">
-        <el-button size="small" type="primary" autocomplete="off" @click="edit_question(scope.$index, scope.row, 1)">编辑</el-button>
+        <el-button size="small" type="primary" autocomplete="off" @click="edit_bank(scope.$index, scope.row, 1)">编辑</el-button>
         <el-button size="small" type="danger" autocomplete="off" @click="" style="margin-left: 20px">删除</el-button>
       </template>
     </el-table-column>
@@ -39,25 +39,29 @@
 
   <el-drawer :model-value="this.drawerVisible" :with-header="false" :before-close="drawerclose">
     <div style="display: flex; align-items: center">
-      <el-text style="font-size: 20px; color: #333333; font-weight: 500;">编辑题目内容</el-text>
+      <el-text style="font-size: 20px; color: #333333; font-weight: 500;">编辑题库内容</el-text>
       <el-button type="danger" autocomplete="off" @click="drawerclose" style="margin-left: auto"><el-icon class="el-icon--left"><CircleCloseFilled /></el-icon>关闭</el-button>
     </div>
     <el-divider />
-    <el-form :model="this.edit_qform" label-width="120px" label-position="right">
-      <el-text style="font-size: 16px; color: #000000; font-weight: 400; margin-bottom: 30px;">题目ID：{{ this.edit_qform.qid }}</el-text>
+    <el-form :model="this.edit_bform" label-width="120px" label-position="right">
+      <el-text style="font-size: 16px; color: #000000; font-weight: 400; margin-bottom: 30px;">题库ID：{{ this.edit_bform.bid }}</el-text>
 
-      <el-form-item label="题目名称" style="margin-top: 20px;">
-        <el-input placeholder="请输入题目名称..." v-model="edit_qform.name" />
+      <el-form-item label="题库名称" style="margin-top: 20px;">
+        <el-input placeholder="请输入题库名称..." v-model="edit_bform.name" />
       </el-form-item>
 
-      <el-form-item label="题目类型" style="margin-top: 20px;">
+      <el-form-item label="题库简介" style="margin-top: 20px;">
+        <el-input type="textarea" :autosize="{ minRows: 6 }" placeholder="请输入题题库简介..." v-model="edit_bform.description" />
+      </el-form-item>
+
+      <el-form-item label="题库状态" style="margin-top: 20px;">
         <el-select
-            v-model="edit_qform.type"
-            placeholder="选择题目类型"
+            v-model="edit_bform.status"
+            placeholder="选择题库状态"
             style="width: 120px"
         >
           <el-option
-              v-for="item in typeSelect"
+              v-for="item in statusSelect"
               :key="item.value"
               :label="item.label"
               :value="item.value"
@@ -65,12 +69,8 @@
         </el-select>
       </el-form-item>
 
-      <el-form-item label="题目内容" style="margin-top: 20px;">
-        <el-input type="textarea" :autosize="{ minRows: 6 }" placeholder="请输入题目内容..." v-model="edit_qform.content" />
-      </el-form-item>
-
-      <el-form-item label="题目答案" style="margin-top: 20px;">
-        <el-input type="textarea" :autosize="{ minRows: 6 }" placeholder="请输入题目答案..." v-model="edit_qform.answer" />
+      <el-form-item v-if="edit_bform.status===1" label="题库解锁价格" style="margin-top: 20px;">
+        <el-input type="textarea" placeholder="请输入题库解锁价格..." v-model="edit_bform.price" />
       </el-form-item>
     </el-form>
     <div style="display: flex; align-items: center; justify-content: center;">
@@ -83,62 +83,59 @@
 export default {
   data() {
     return {
-      questionform: {
-        questionId: '',
-        questionName: '',
+      bankform: {
+        bankId: '',
+        bankName: '',
       },
       searching: false,
       resultform: [],
       drawerVisible: false,
       drawerMode: -1,
 
-      edit_qform: {
-        qid: '',
+      edit_bform: {
+        bid: '',
         name: '',
-        type: 0,
-        content: '',
-        answer: '',
+        description: '',
+        status: 0,
+        price: 0,
+        questions: '',
       },
 
-      typeSelect: [
+      statusSelect: [
         {
           value: 0,
-          label: "选择题",
+          label: "公开",
         },
         {
           value: 1,
-          label: "填空题",
+          label: "收费",
         },
         {
           value: 2,
-          label: "简答题",
-        },
-        {
-          value: 3,
-          label: "编程题",
+          label: "隐藏",
         }
       ],
     };
   },
 
   methods: {
-    search_question() {
+    search_bank() {
       this.searching = true;
-      if (this.questionform.questionId === "" && this.questionform.questionName === "") {
+      if (this.bankform.bankId === "" && this.bankform.bankName === "") {
         this.$message.error("请至少输入一个查询条件")
         this.searching = false;
       } else {
-        this.$request.post("/codez/admin/questions/search/", {
-          qid: this.questionform.questionId,
-          name: this.questionform.questionName,
+        this.$request.post("/codez/admin/banks/search/", {
+          bid: this.bankform.bankId,
+          name: this.bankform.bankName,
         }).then(res => {
           if (res.data.meta.status === 200) {
             this.resultform= [];
-            let q= {};
-            for (q of res.data.data.search_results) {
+            let b= {};
+            for (b of res.data.data.search_results) {
               this.resultform.push({
-                "qid": q.qid,
-                "name": q.name,
+                "bid": b.bid,
+                "name": b.bankname,
               })
             }
             this.searching = false;
@@ -152,19 +149,20 @@ export default {
     drawerclose() {
       this.drawerVisible = false;
     },
-    edit_question(index, row, mode) {
+    edit_bank(index, row, mode) {
       this.drawerMode = mode;
       if (mode === 1) {
-        this.$request.post("/codez/admin/questions/info/", {
+        this.$request.post("/codez/admin/banks/info/", {
           qid: row.qid,
         }).then(res => {
           if (res.data.meta.status === 200) {
             this.edit_qform= {
               qid: res.data.data.qid,
-              name: res.data.data.name,
-              type: res.data.data.type,
-              content: res.data.data.content,
-              answer: res.data.data.answer,
+              name: "",
+              description: "",
+              status: 0,
+              price: 0,
+              questions: [],
             };
             this.drawerVisible = true;
           } else {
@@ -172,12 +170,12 @@ export default {
           }
         });
       } else if (mode === 2) {
-        this.$request.post("/codez/admin/questions/available_id/", {
-          mode: "newquestion",
+        this.$request.post("/codez/admin/banks/available_id/", {
+          mode: "newbank",
         }).then(res => {
           if (res.data.meta.status === 200) {
-            this.edit_qform= {
-              qid: res.data.data.new_qid,
+            this.edit_bform= {
+              bid: res.data.data.new_bid,
               name: '',
               type: 0,
               content: '',
@@ -199,7 +197,7 @@ export default {
         this.$message.error("题目答案不得为空")
       } else {
         if (this.drawerMode === 1) {
-          this.$request.post("/codez/admin/questions/change/", {
+          this.$request.post("/codez/admin/banks/change/", {
             qid: this.edit_qform.qid,
             name: this.edit_qform.name,
             type: this.edit_qform.type,
@@ -214,7 +212,7 @@ export default {
             }
           });
         } else if (this.drawerMode === 2) {
-          this.$request.post("/codez/admin/questions/create/", {
+          this.$request.post("/codez/admin/banks/create/", {
             qid: this.edit_qform.qid,
             name: this.edit_qform.name,
             type: this.edit_qform.type,
