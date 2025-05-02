@@ -618,7 +618,7 @@ class Admin_Search_Question_View(APIView):
             question = Question.objects.filter(filters)
             if question.count():
                 for u in question:
-                    tmpobj = {'qid': u.questionid, 'username': u.name}
+                    tmpobj = {'qid': u.questionid, 'name': u.name}
                     ret["data"]["search_results"].append(tmpobj)
                 ret["meta"]["status"] = 200
                 ret["meta"]["message"] = "搜寻成功"
@@ -627,6 +627,114 @@ class Admin_Search_Question_View(APIView):
                 ret["meta"]["status"] = 404
                 ret["meta"]["message"] = "搜寻结果为空"
                 return Response(ret)
+
+        except Exception as error:
+            print(error)
+            ret["meta"]["status"] = 500
+            ret["meta"]["message"] = "内部错误"
+            return Response(ret)
+
+# 管理员修改题目内容接口
+class Admin_Question_Change_View(APIView):
+    def post(self, request):
+        ret = {
+            "data": {},
+            "meta": {
+                "status": 200,
+                "message": ""
+            }
+        }
+        try:
+            qid = request.data["qid"]
+            name = request.data["name"]
+            type = request.data["type"]
+            content = request.data["content"]
+            answer = request.data["answer"]
+
+            question = Question.objects.filter(questionid=qid)
+            if question.count():
+                question = question[0]
+                question.name = name
+                question.type = type
+                question.content = content
+                question.answer = answer
+                question.save()
+
+                ret["meta"]["status"] = 200
+                ret["meta"]["message"] = "修改成功"
+                return Response(ret)
+            else:
+                ret["meta"]["status"] = 500
+                ret["meta"]["message"] = "该题目ID不存在"
+                return Response(ret)
+
+        except Exception as error:
+            print(error)
+            ret["meta"]["status"] = 500
+            ret["meta"]["message"] = "内部错误"
+            return Response(ret)
+
+# 管理员搜寻题库接口
+class Admin_Search_Bank_View(APIView):
+    def post(self, request):
+        ret = {
+            "data": {
+                "search_results": [],
+            },
+            "meta": {
+                "status": 200,
+                "message": ""
+            }
+        }
+        try:
+            bid = request.data["bid"]
+            name = request.data["name"]
+            filters = Q()
+            if bid:
+                filters = filters & Q(bankid=int(bid))
+            if name:
+                filters = filters & Q(bankname=name)
+
+            bank = Bank.objects.filter(filters)
+            if bank.count():
+                for b in bank:
+                    tmpobj = {'qid': b.bankid, 'bankname': b.name}
+                    ret["data"]["search_results"].append(tmpobj)
+                ret["meta"]["status"] = 200
+                ret["meta"]["message"] = "搜寻成功"
+                return Response(ret)
+            else:
+                ret["meta"]["status"] = 404
+                ret["meta"]["message"] = "搜寻结果为空"
+                return Response(ret)
+
+        except Exception as error:
+            print(error)
+            ret["meta"]["status"] = 500
+            ret["meta"]["message"] = "内部错误"
+            return Response(ret)
+
+# 管理员获取可用的新题库ID接口
+class Admin_Bank_ID_View(APIView):
+    def post(self, request):
+        ret = {
+            "data": {},
+            "meta": {
+                "status": 200,
+                "message": ""
+            }
+        }
+        try:
+            result = True
+            newbid = 10000 + Bank.objects.count()
+            while result:
+                newbid += 1
+                tmpbank = Bank.objects.filter(bankid=newbid)
+                result = (tmpbank.count())
+            ret['data']['new_bid'] = newbid
+            ret["meta"]["status"] = 200
+            ret["meta"]["message"] = "获取成功"
+            return Response(ret)
 
         except Exception as error:
             print(error)

@@ -46,4 +46,13 @@ urlpatterns = [
 
     # 管理员搜寻题目接口
     path('admin/questions/search/', views.Admin_Search_Question_View.as_view()),
+
+    # 管理员修改题目内容接口
+    path('admin/questions/change/', views.Admin_Question_Change_View.as_view()),
+
+    # 管理员搜寻题库接口
+    path('admin/banks/search/', views.Admin_Search_Bank_View.as_view()),
+
+    # 管理员获取可用的新题库ID接口
+    path('admin/banks/available_id/', views.Admin_Bank_ID_View.as_view()),
 ]
