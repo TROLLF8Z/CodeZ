@@ -20,6 +20,9 @@ urlpatterns = [
     path('user/change/description', views.User_Change_Desc_View.as_view()),
     path('user/change/info', views.User_Change_Info_View.as_view()),
 
+    # 首页获取题库列表接口
+    path('banklist/', views.Bank_List_View.as_view()),
+
     # 管理员登录接口
     path('login_admin/', views.Login_Admin_View.as_view()),
 

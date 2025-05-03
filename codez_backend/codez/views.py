@@ -267,6 +267,33 @@ class User_Change_Info_View(APIView):
             ret["meta"]["message"] = "内部错误"
             return Response(ret)
 
+# 获取题库列表接口
+class Bank_List_View(APIView):
+    def post(self, request):
+        ret = {
+            "data": {
+                "result": [],
+            },
+            "meta": {
+                "status": 200,
+                "message": ""
+            }
+        }
+        try:
+            bank = Bank.objects.all()
+            for i in bank:
+                if i.status != 2:
+                    tmpobj = {"bid": i.bankid, "name": i.bankname, "description": i.description, "status": i.status}
+                    ret['data']['result'].append(tmpobj)
+            ret["meta"]["status"] = 200
+            ret["meta"]["message"] = "获取成功"
+            return Response(ret)
+        except Exception as error:
+            print(error)
+            ret["meta"]["status"] = 500
+            ret["meta"]["message"] = "内部错误"
+            return Response(ret)
+
 # 管理员登录接口
 class Login_Admin_View(APIView):
     def post(self, request):
