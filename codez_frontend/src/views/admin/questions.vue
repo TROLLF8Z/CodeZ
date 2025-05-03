@@ -37,7 +37,7 @@
     </el-table-column>
   </el-table>
 
-  <el-drawer :model-value="this.drawerVisible" :with-header="false" :before-close="drawerclose">
+  <el-drawer :model-value="this.drawerVisible" :with-header="false" :before-close="drawerclose" size="50%">
     <div style="display: flex; align-items: center">
       <el-text style="font-size: 20px; color: #333333; font-weight: 500;">编辑题目内容</el-text>
       <el-button type="danger" autocomplete="off" @click="drawerclose" style="margin-left: auto"><el-icon class="el-icon--left"><CircleCloseFilled /></el-icon>关闭</el-button>
