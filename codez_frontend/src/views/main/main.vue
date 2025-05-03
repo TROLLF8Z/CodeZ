@@ -25,19 +25,68 @@
       </el-dropdown>
     </el-header>
     <el-main>
-      <router-view />
+      <div style="display: flex; justify-content: center; align-items: center">
+        <div style=" width: 50%; display: flex; justify-content: center; align-items: center">
+          <el-input v-model="this.search" :prefix-icon="Search" placeholder="搜索题库、用户..." size="large" style="font-size: 16px;" />
+        </div>
+      </div>
+
+      <div>
+        <el-menu default-active="1" mode="horizontal" background-color="f0f2f5" text-color="#000000" active-text-color="#000000">
+          <el-menu-item index="1" @click="changetab(1)">全部题库</el-menu-item>
+          <el-menu-item index="2" @click="changetab(2)">免费题库</el-menu-item>
+          <el-menu-item index="3" @click="changetab(3)">收费题库</el-menu-item>
+        </el-menu>
+      </div>
+
+      <div  style="display: flex; justify-content: center; align-items: center; flex-direction: column;">
+        <el-card v-for="bank in this.displaylist" shadow="hover" style="width: 60%; margin-top: 10px; margin-bottom: 20px;">
+          <div>
+            <el-text style="font-size: 20px; font-weight: 500; color:#000000; margin-right: 15px;">{{ bank.name }}</el-text>
+            <el-tag :type="this.display_status[bank.status].type">{{ this.display_status[bank.status].label }}</el-tag>
+          </div>
+          <div style="margin-top: 10px;"><el-text style="font-size: 14px; font-weight: 500; color:#000000">{{ bank.description }}</el-text></div>
+        </el-card>
+      </div>
+
+      <el-backtop :right="100" :bottom="100" />
     </el-main>
   </el-container>
 </template>
 
 <script>
+import {Search} from "@element-plus/icons-vue";
+
 export default {
+  computed: {
+    Search() {
+      return Search
+    }
+  },
   data() {
     return {
       displayname: "",
       avatar: "",
       zcoin: 0,
       uid: 0,
+      search: "",
+      banklist: [],
+      displaylist: [],
+
+      display_status: [
+        {
+          type: "success",
+          label: "免费",
+        },
+        {
+          type: "warning",
+          label: "收费",
+        },
+        {
+          type: "danger",
+          label: "禁用",
+        },
+      ]
     }
   },
   created() {
@@ -48,12 +97,54 @@ export default {
     if (this.avatar === '' || !this.avatar) {
       this.avatar = 'src/assets/avatar/defaultavatar.png';
     }
+    if (this.getbanklist()) {
+      this.changetab(1);
+    }
   },
   methods: {
     quitLogin() {
       localStorage.clear()
       this.$router.push('/login')
       this.$message.success('退出成功')
+    },
+    getbanklist() {
+      this.$request.post("/codez/banklist/", {
+        uid: this.uid,
+      }).then(res => {
+        if (res.data.meta.status === 200) {
+          this.banklist = [];
+          let b = {};
+          for (b of res.data.data.result) {
+            this.banklist.push(b);
+          }
+        } else {
+          this.$message.error(res.data.meta.message);
+        }
+        return true;
+      });
+    },
+    changetab(index) {
+      this.displaylist = [];
+      let b = {};
+      let i = 0;
+      for (b of this.banklist) {
+        if (index === 1) {
+          b.index = i;
+          this.displaylist.push(b);
+        } else if (index === 2) {
+          if (b.status === 0) {
+            b.index = i;
+            this.displaylist.push(b);
+          }
+        } else if (index === 3) {
+          if (b.status === 1) {
+            b.index = i;
+            this.displaylist.push(b);
+          }
+        }
+        i++;
+      }
+      console.log(this.displaylist);
     }
   }
 }
@@ -87,20 +178,16 @@ export default {
   position: relative;
 }
 
-.el-menu {
-  border: none;
-}
-
 .el-menu-item.is-active {
-  background-color: #1890ff !important;
+  background-color: #c3dbff !important;
 }
 
 .el-menu-item {
-  background-color: #000b16;
+  background-color: #f0f2f5;
 }
 
 .el-menu-item:hover {
-  color: #fff !important;
+  color: #ffffff !important;
 }
 
 .logo {
