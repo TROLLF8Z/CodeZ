@@ -55,4 +55,16 @@ urlpatterns = [
 
     # 管理员获取可用的新题库ID接口
     path('admin/banks/available_id/', views.Admin_Bank_ID_View.as_view()),
+
+    # 管理员新增题库接口
+    path('admin/banks/create/', views.Admin_Bank_Create_View.as_view()),
+
+    # 管理员获取题库包含题目列表接口
+    path('admin/banks/questions/', views.Admin_Bank_Questions_View.as_view()),
+
+    # 管理员获取题库内容列表接口
+    path('admin/banks/info/', views.Admin_Bank_Info_View.as_view()),
+
+    # 管理员修改题库内容接口
+    path('admin/banks/change/', views.Admin_Bank_Change_View.as_view()),
 ]

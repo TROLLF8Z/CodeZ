@@ -328,7 +328,7 @@ class Admin_Search_User_View(APIView):
             if uid:
                 filters = filters & Q(userid=int(uid))
             if name:
-                filters = filters & Q(displayname=name)
+                filters = filters & Q(displayname__contains=name)
 
             user = ZUserProfile.objects.filter(filters)
             if user.count():
@@ -613,7 +613,7 @@ class Admin_Search_Question_View(APIView):
             if qid:
                 filters = filters & Q(questionid=int(qid))
             if name:
-                filters = filters & Q(name=name)
+                filters = filters & Q(name__contains=name)
 
             question = Question.objects.filter(filters)
             if question.count():
@@ -693,12 +693,12 @@ class Admin_Search_Bank_View(APIView):
             if bid:
                 filters = filters & Q(bankid=int(bid))
             if name:
-                filters = filters & Q(bankname=name)
+                filters = filters & Q(bankname__contains=name)
 
             bank = Bank.objects.filter(filters)
             if bank.count():
                 for b in bank:
-                    tmpobj = {'qid': b.bankid, 'bankname': b.name}
+                    tmpobj = {'bid': b.bankid, 'bankname': b.bankname}
                     ret["data"]["search_results"].append(tmpobj)
                 ret["meta"]["status"] = 200
                 ret["meta"]["message"] = "搜寻成功"
@@ -735,6 +735,166 @@ class Admin_Bank_ID_View(APIView):
             ret["meta"]["status"] = 200
             ret["meta"]["message"] = "获取成功"
             return Response(ret)
+
+        except Exception as error:
+            print(error)
+            ret["meta"]["status"] = 500
+            ret["meta"]["message"] = "内部错误"
+            return Response(ret)
+
+# 管理员新增题库接口
+class Admin_Bank_Create_View(APIView):
+    def post(self, request):
+        ret = {
+            "data": {},
+            "meta": {
+                "status": 200,
+                "message": ""
+            }
+        }
+        try:
+            bid = request.data["bid"]
+            name = request.data["name"]
+            description = request.data["description"]
+            status = request.data["status"]
+            price = request.data["price"]
+            questions = request.data["questions"]
+
+            bank = Bank.objects.filter(bankid=bid)
+            if not bank.count():
+                newb = Bank()
+                newb.bankid = bid
+                newb.bankname = name
+                newb.description = description
+                newb.status = status
+                newb.price = price
+                newb.questions = questions
+                newb.save()
+
+                ret["meta"]["status"] = 200
+                ret["meta"]["message"] = "新增成功"
+                return Response(ret)
+            else:
+                ret["meta"]["status"] = 500
+                ret["meta"]["message"] = "该题库ID已存在"
+                return Response(ret)
+
+        except Exception as error:
+            print(error)
+            ret["meta"]["status"] = 500
+            ret["meta"]["message"] = "内部错误"
+            return Response(ret)
+
+# 管理员获取题库包含题目接口
+class Admin_Bank_Questions_View(APIView):
+    def post(self, request):
+        ret = {
+            "data": {
+                "result": [],
+            },
+            "meta": {
+                "status": 200,
+                "message": ""
+            }
+        }
+        try:
+            bid = request.data["bid"]
+            bank = Bank.objects.filter(bankid=bid)
+            if bank.count():
+                bank = bank[0]
+                if bank.questions:
+                    for qid in bank.questions.split(','):
+                        tmpq = Question.objects.filter(questionid=qid)
+                        if tmpq.count():
+                            tmpq = tmpq[0]
+                            tmpobj = {'qid': tmpq.questionid, 'name': tmpq.name}
+                            ret["data"]["result"].append(tmpobj)
+                ret["meta"]["status"] = 200
+                ret["meta"]["message"] = "获取成功"
+                return Response(ret)
+            else:
+                ret["meta"]["status"] = 404
+                ret["meta"]["message"] = "搜寻结果为空"
+                return Response(ret)
+
+        except Exception as error:
+            print(error)
+            ret["meta"]["status"] = 500
+            ret["meta"]["message"] = "内部错误"
+            return Response(ret)
+
+# 管理员获取题库内容接口
+class Admin_Bank_Info_View(APIView):
+    def post(self, request):
+        ret = {
+            "data": {},
+            "meta": {
+                "status": 200,
+                "message": ""
+            }
+        }
+        try:
+            bid = request.data["bid"]
+
+            bank = Bank.objects.filter(bankid=bid)
+            if bank.count():
+                bank = bank[0]
+                ret["data"]["bid"] = bid
+                ret["data"]["name"] = bank.bankname
+                ret["data"]["description"] = bank.description
+                ret["data"]["status"] = bank.status
+                ret["data"]["price"] = bank.price
+                ret["data"]["questions"] = bank.questions
+
+                ret["meta"]["status"] = 200
+                ret["meta"]["message"] = "获取成功"
+                return Response(ret)
+            else:
+                ret["meta"]["status"] = 404
+                ret["meta"]["message"] = "该题库ID不存在"
+                return Response(ret)
+
+        except Exception as error:
+            print(error)
+            ret["meta"]["status"] = 500
+            ret["meta"]["message"] = "内部错误"
+            return Response(ret)
+
+# 管理员修改题库内容接口
+class Admin_Bank_Change_View(APIView):
+    def post(self, request):
+        ret = {
+            "data": {},
+            "meta": {
+                "status": 200,
+                "message": ""
+            }
+        }
+        try:
+            bid = request.data["bid"]
+            name = request.data["name"]
+            description = request.data["description"]
+            status = request.data["status"]
+            price = request.data["price"]
+            questions = request.data["questions"]
+
+            bank = Bank.objects.filter(bankid=bid)
+            if bank.count():
+                bank = bank[0]
+                bank.bankname = name
+                bank.description = description
+                bank.status = status
+                bank.price = price
+                bank.questions = questions
+                bank.save()
+
+                ret["meta"]["status"] = 200
+                ret["meta"]["message"] = "修改成功"
+                return Response(ret)
+            else:
+                ret["meta"]["status"] = 500
+                ret["meta"]["message"] = "该题库ID已被使用"
+                return Response(ret)
 
         except Exception as error:
             print(error)
