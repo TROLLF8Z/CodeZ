@@ -23,6 +23,12 @@ urlpatterns = [
     # 首页获取题库列表接口
     path('banklist/', views.Bank_List_View.as_view()),
 
+    # 搜索题库接口
+    path('search/bank/', views.Search_Bank_View.as_view()),
+
+    # 搜索用户接口
+    path('search/user/', views.Search_User_View.as_view()),
+
     # 管理员登录接口
     path('login_admin/', views.Login_Admin_View.as_view()),
 

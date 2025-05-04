@@ -294,6 +294,90 @@ class Bank_List_View(APIView):
             ret["meta"]["message"] = "内部错误"
             return Response(ret)
 
+# 搜寻题库接口
+class Search_Bank_View(APIView):
+    def post(self, request):
+        ret = {
+            "data": {
+                "search_results": [],
+            },
+            "meta": {
+                "status": 200,
+                "message": ""
+            }
+        }
+        try:
+            query = request.data["query"]
+            filters = Q()
+            filters = filters & Q(bankid=query)
+            filters = filters & Q(bankname__contains=query)
+
+            bank = Bank.objects.filter(filters)
+            if bank.count():
+                for b in bank:
+                    tmpobj = {
+                        'bid': b.bankid,
+                        'bankname': b.bankname,
+                        'description': b.description,
+                        'status': b.status,
+                        'price': b.price
+                    }
+                    ret["data"]["search_results"].append(tmpobj)
+                ret["meta"]["status"] = 200
+                ret["meta"]["message"] = "搜寻成功"
+                return Response(ret)
+            else:
+                ret["meta"]["status"] = 404
+                ret["meta"]["message"] = "搜寻结果为空"
+                return Response(ret)
+
+        except Exception as error:
+            print(error)
+            ret["meta"]["status"] = 500
+            ret["meta"]["message"] = "内部错误"
+            return Response(ret)
+
+# 搜寻用户接口
+class Search_User_View(APIView):
+    def post(self, request):
+        ret = {
+            "data": {
+                "search_results": [],
+            },
+            "meta": {
+                "status": 200,
+                "message": ""
+            }
+        }
+        try:
+            query = request.data["query"]
+            filters = Q()
+            filters = filters & Q(userid=query)
+            filters = filters & Q(displayname__contains=query)
+
+            user = ZUserProfile.objects.filter(filters)
+            if user.count():
+                for u in user:
+                    tmpobj = {
+                        'uid': u.userid,
+                        'name': u.displayname,
+                        'description': u.description
+                    }
+                    ret["data"]["search_results"].append(tmpobj)
+                ret["meta"]["status"] = 200
+                ret["meta"]["message"] = "搜寻成功"
+                return Response(ret)
+            else:
+                ret["meta"]["status"] = 404
+                ret["meta"]["message"] = "搜寻结果为空"
+                return Response(ret)
+
+        except Exception as error:
+            print(error)
+            ret["meta"]["status"] = 500
+            ret["meta"]["message"] = "内部错误"
+            return Response(ret)
+
 # 管理员登录接口
 class Login_Admin_View(APIView):
     def post(self, request):
