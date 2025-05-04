@@ -40,7 +40,7 @@
       </div>
 
       <div  style="display: flex; justify-content: center; align-items: center; flex-direction: column;">
-        <el-card v-for="bank in this.displaylist" shadow="hover" style="width: 60%; margin-top: 10px; margin-bottom: 20px;" @click="testo(bank.bid)">
+        <el-card v-for="bank in this.displaylist" shadow="hover" style="width: 60%; margin-top: 10px; margin-bottom: 20px;" @click="card_click(bank)">
           <div>
             <el-text style="font-size: 20px; font-weight: 500; color:#000000; margin-right: 15px;">{{ bank.name }}</el-text>
             <el-tag :type="this.display_status[bank.status].type">{{ this.display_status[bank.status].label }}</el-tag>
@@ -158,8 +158,8 @@ export default {
         this.$router.push('/search?search_param=' + this.search);
       }
     },
-    testo(id) {
-      console.log(id);
+    card_click(item) {
+      this.$router.push('/bank?id=' + item.bid);
     }
   }
 }

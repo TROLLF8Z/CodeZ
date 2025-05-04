@@ -31,11 +31,17 @@
         </div>
       </div>
 
-      <div style="display: flex; justify-content: center; align-items: center">
-        <el-radio-group v-model="tabname" size="large" style="margin-top: 20px;">
-          <el-radio-button label="题库" @change="changetab"/>
-          <el-radio-button label="用户" @change="changetab"/>
-        </el-radio-group>
+      <div  style="display: flex; justify-content: center; align-items: center; flex-direction: column;">
+        <el-card v-for="item in this.displaylist" shadow="hover" style="width: 60%; margin-top: 10px; margin-bottom: 20px;" @click="card_click(item)">
+          <div v-if="item.type === '题库'">
+            <el-text style="font-size: 20px; font-weight: 500; color:#000000; margin-right: 15px;">{{ item.name }}</el-text>
+            <el-tag :type="this.display_status[item.status].type">{{ this.display_status[item.status].label }}</el-tag>
+          </div>
+          <div v-if="item.type === '题库'" style="margin-top: 10px;"><el-text style="font-size: 14px; font-weight: 500; color:#000000">{{ item.description }}</el-text></div>
+
+          <div v-if="item.type === '用户'"><el-text style="font-size: 20px; font-weight: 500; color:#000000; margin-right: 15px;">{{ item.name }}</el-text></div>
+          <div v-if="item.type === '用户'" style="margin-top: 10px;"><el-text style="font-size: 14px; font-weight: 500; color:#000000">个人简介：{{ item.description }}</el-text></div>
+        </el-card>
       </div>
 
       <el-backtop :right="100" :bottom="100" />
@@ -106,38 +112,47 @@ export default {
         this.search = encodeURIComponent(this.search);
         this.$router.push('/search?search_param=' + this.search);
         this.search = decodeURIComponent(this.search);
-        console.log(this.search);
+        this.search_request();
       }
     },
-    changetab() {
-
-    },
-    search_request() {
+    async search_request() {
       if (this.search === '') {
         this.$message.error("搜索内容不得为空")
-      } else if (this.tabname === '题库'){
-        this.$request.post("/codez/search/bank/", {
+      } else {
+        this.displaylist = [];
+        await this.$request.post("/codez/search/bank/", {
           query: this.search,
         }).then(res => {
           if (res.data.meta.status === 200) {
-            this.displaylist = [];
             let b = {};
-            for (b of res.data.data.search_result) {
-
+            for (b of res.data.data.search_results) {
+              b.type = '题库';
+              this.displaylist.push(b);
             }
-          } else {
-            this.$message.error(res.data.meta.message);
           }
         });
-      } else if (this.tabname === '用户') {
-        this.$request.post("/codez/search/user/", {
+
+        await this.$request.post("/codez/search/user/", {
           query: this.search,
         }).then(res => {
           if (res.data.meta.status === 200) {
-          } else {
-            this.$message.error(res.data.meta.message);
+            let u = {};
+            for (u of res.data.data.search_results) {
+              u.type = '用户';
+              this.displaylist.push(u);
+            }
           }
         });
+        if (this.displaylist.length === 0) {
+          this.$message.error("搜索结果为空")
+        }
+      }
+    },
+    card_click(item) {
+      if (item.type === '用户') {
+        this.$router.push('/user?uid=' + item.uid);
+      } else if (item.type === '题库') {
+        this.$router.push('/bank?id=' + item.bid);
       }
     }
   }

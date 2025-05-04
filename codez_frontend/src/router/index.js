@@ -50,6 +50,13 @@ const router = createRouter({
       hidden: true,
     },
     {
+      path: "/bank",
+      name: "bank",
+      meta: { title: "题库详情" },
+      component: () => import("@/views/bank/bank.vue"),
+      hidden: true,
+    },
+    {
       path: "/admin/login",
       name: "admin-login",
       meta: { title: "管理员登录" },
