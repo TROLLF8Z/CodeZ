@@ -33,20 +33,9 @@
 
       <div style="display: flex; justify-content: center; align-items: center">
         <el-radio-group v-model="tabname" size="large" style="margin-top: 20px;">
-          <el-radio-button label="全部题库" @change="changetab"/>
-          <el-radio-button label="免费题库" @change="changetab"/>
-          <el-radio-button label="收费题库" @change="changetab"/>
+          <el-radio-button label="题库" @change="changetab"/>
+          <el-radio-button label="用户" @change="changetab"/>
         </el-radio-group>
-      </div>
-
-      <div  style="display: flex; justify-content: center; align-items: center; flex-direction: column;">
-        <el-card v-for="bank in this.displaylist" shadow="hover" style="width: 60%; margin-top: 10px; margin-bottom: 20px;" @click="testo(bank.bid)">
-          <div>
-            <el-text style="font-size: 20px; font-weight: 500; color:#000000; margin-right: 15px;">{{ bank.name }}</el-text>
-            <el-tag :type="this.display_status[bank.status].type">{{ this.display_status[bank.status].label }}</el-tag>
-          </div>
-          <div style="margin-top: 10px;"><el-text style="font-size: 14px; font-weight: 500; color:#000000">{{ bank.description }}</el-text></div>
-        </el-card>
       </div>
 
       <el-backtop :right="100" :bottom="100" />
@@ -70,7 +59,6 @@ export default {
       zcoin: 0,
       uid: 0,
       search: "",
-      banklist: [],
       displaylist: [],
       tabname: '',
 
@@ -100,10 +88,9 @@ export default {
     }
   },
   mounted() {
-    this.getbanklist();
-    setTimeout(() => {
-      this.tabname = '全部题库';
-      this.changetab();
+    this.search = decodeURIComponent(this.$route.query.search_param);
+    setTimeout(()=>{
+      this.search_request();
     }, 100);
   },
   methods: {
@@ -112,54 +99,46 @@ export default {
       this.$router.push('/login')
       this.$message.success('退出成功')
     },
-    getbanklist() {
-      this.$request.post("/codez/banklist/", {
-        uid: this.uid,
-      }).then(res => {
-        if (res.data.meta.status === 200) {
-          this.banklist = [];
-          let b = {};
-          for (b of res.data.data.result) {
-            this.banklist.push(b);
-          }
-        } else {
-          this.$message.error(res.data.meta.message);
-        }
-        return true;
-      });
-    },
-    changetab() {
-      this.displaylist = [];
-      let b = {};
-      let i = 0;
-      for (b of this.banklist) {
-        if (this.tabname === '全部题库') {
-          b.index = i;
-          this.displaylist.push(b);
-        } else if (this.tabname === '免费题库') {
-          if (b.status === 0) {
-            b.index = i;
-            this.displaylist.push(b);
-          }
-        } else if (this.tabname === '收费题库') {
-          if (b.status === 1) {
-            b.index = i;
-            this.displaylist.push(b);
-          }
-        }
-        i++;
-      }
-    },
     push_search() {
       if (this.search === '') {
         this.$message.error("搜索内容不得为空")
       } else {
         this.search = encodeURIComponent(this.search);
         this.$router.push('/search?search_param=' + this.search);
+        this.search = decodeURIComponent(this.search);
+        console.log(this.search);
       }
     },
-    testo(id) {
-      console.log(id);
+    changetab() {
+
+    },
+    search_request() {
+      if (this.search === '') {
+        this.$message.error("搜索内容不得为空")
+      } else if (this.tabname === '题库'){
+        this.$request.post("/codez/search/bank/", {
+          query: this.search,
+        }).then(res => {
+          if (res.data.meta.status === 200) {
+            this.displaylist = [];
+            let b = {};
+            for (b of res.data.data.search_result) {
+
+            }
+          } else {
+            this.$message.error(res.data.meta.message);
+          }
+        });
+      } else if (this.tabname === '用户') {
+        this.$request.post("/codez/search/user/", {
+          query: this.search,
+        }).then(res => {
+          if (res.data.meta.status === 200) {
+          } else {
+            this.$message.error(res.data.meta.message);
+          }
+        });
+      }
     }
   }
 }

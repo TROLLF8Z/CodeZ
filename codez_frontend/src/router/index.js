@@ -43,6 +43,13 @@ const router = createRouter({
       hidden: true,
     },
     {
+      path: "/search",
+      name: "search",
+      meta: { title: "搜索" },
+      component: () => import("@/views/search/search.vue"),
+      hidden: true,
+    },
+    {
       path: "/admin/login",
       name: "admin-login",
       meta: { title: "管理员登录" },
