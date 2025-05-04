@@ -309,15 +309,17 @@ class Search_Bank_View(APIView):
         try:
             query = request.data["query"]
             filters = Q()
-            filters = filters & Q(bankid=query)
-            filters = filters & Q(bankname__contains=query)
-
+            try:
+                filters = filters | Q(bankid=int(query))
+            except Exception as error:
+                pass
+            filters = filters | Q(bankname__contains=query)
             bank = Bank.objects.filter(filters)
             if bank.count():
                 for b in bank:
                     tmpobj = {
                         'bid': b.bankid,
-                        'bankname': b.bankname,
+                        'name': b.bankname,
                         'description': b.description,
                         'status': b.status,
                         'price': b.price
@@ -352,8 +354,11 @@ class Search_User_View(APIView):
         try:
             query = request.data["query"]
             filters = Q()
-            filters = filters & Q(userid=query)
-            filters = filters & Q(displayname__contains=query)
+            try:
+                filters = filters | Q(userid=int(query))
+            except Exception as error:
+                pass
+            filters = filters | Q(displayname__contains=str(query))
 
             user = ZUserProfile.objects.filter(filters)
             if user.count():
@@ -942,6 +947,7 @@ class Admin_Bank_Info_View(APIView):
             "meta": {
                 "status": 200,
                 "message": ""
+
             }
         }
         try:

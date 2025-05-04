@@ -47,3 +47,17 @@ class ZAdmin(models.Model):
     adminid = models.BigIntegerField(primary_key=True, max_length=15, unique=True)
     adminname = models.CharField(max_length=50, default = 'CodeZ_Admin')
     password = models.CharField(max_length=50, default = '159159159')
+
+# 题库与用户关系对应ORM模型
+class User_Bank_Status(models.Model):
+    userid = models.BigIntegerField(primary_key=True, max_length=15, unique=True)
+    bankid = models.BigIntegerField(max_length=15, unique=True)
+    finished = models.IntegerField(default=0)
+
+# 题目与用户关系对应ORM模型
+class User_Question_Status(models.Model):
+    userid = models.BigIntegerField(primary_key=True, max_length=15, unique=True)
+    questionid = models.BigIntegerField(max_length=15, unique=True)
+    finished = models.IntegerField(default=0)
+    time = models.IntegerField(default=0)
+    attempts = models.IntegerField(default=0)
