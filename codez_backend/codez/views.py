@@ -1018,3 +1018,171 @@ class Admin_Bank_Change_View(APIView):
             ret["meta"]["status"] = 500
             ret["meta"]["message"] = "内部错误"
             return Response(ret)
+
+# 获取用户与题库关系接口
+class User_Bank_Status_View(APIView):
+    def post(self, request):
+        ret = {
+            "data": {},
+            "meta": {
+                "status": 200,
+                "message": ""
+            }
+        }
+        try:
+            bid = request.data["bid"]
+            uid = request.data["uid"]
+
+            stat = User_Bank_Status.objects.filter(bankid=bid, userid=uid)
+            if stat.count():
+                stat = stat[0]
+                ret["data"]["finished"] = stat.finished
+                ret["data"]["unlocked"] = stat.unlocked
+                ret["meta"]["status"] = 200
+                ret["meta"]["message"] = "获取成功"
+                return Response(ret)
+            else:
+                stat = User_Bank_Status()
+                result = True
+                newid = 1000000 + User_Bank_Status.objects.count()
+                while result:
+                    newid += 1
+                    tmpstat = User_Bank_Status.objects.filter(id=newid)
+                    result = tmpstat.count()
+                stat.id = newid
+                stat.userid = uid
+                stat.bankid = bid
+                stat.finished = 0
+                stat.unlocked = 0
+                stat.save()
+                ret["meta"]["status"] = 200
+                ret["meta"]["message"] = "未找到对应关系词条，已成功创建"
+                return Response(ret)
+
+        except Exception as error:
+            print(error)
+            ret["meta"]["status"] = 500
+            ret["meta"]["message"] = "内部错误"
+            return Response(ret)
+
+# 获取用户与题目关系接口
+class User_Question_Status_View(APIView):
+    def post(self, request):
+        ret = {
+            "data": {},
+            "meta": {
+                "status": 200,
+                "message": ""
+            }
+        }
+        try:
+            qid = request.data["qid"]
+            uid = request.data["uid"]
+
+            stat = User_Question_Status.objects.filter(questionid=qid, userid=uid)
+            if stat.count():
+                stat = stat[0]
+                ret["data"]["time"] = stat.time
+                ret["data"]["attempts"] = stat.attempts
+                ret["data"]["finished"] = stat.finished
+                ret["meta"]["status"] = 200
+                ret["meta"]["message"] = "获取成功"
+                return Response(ret)
+            else:
+                stat = User_Question_Status()
+                result = True
+                newid = 1000000 + User_Question_Status.objects.count()
+                while result:
+                    newid += 1
+                    tmpstat = User_Question_Status.objects.filter(id=newid)
+                    result = tmpstat.count()
+                stat.id = newid
+                stat.userid = uid
+                stat.questionid = qid
+                stat.finished = 0
+                stat.time = 0
+                stat.attempts = 0
+                stat.save()
+                ret["data"]["time"] = stat.time
+                ret["data"]["attempts"] = stat.attempts
+                ret["data"]["finished"] = stat.finished
+                ret["meta"]["status"] = 200
+                ret["meta"]["message"] = "未找到对应关系词条，已成功创建"
+                return Response(ret)
+
+        except Exception as error:
+            print(error)
+            ret["meta"]["status"] = 500
+            ret["meta"]["message"] = "内部错误"
+            return Response(ret)
+
+# 获取用户当前作答题目内容接口
+class User_Current_Question_View(APIView):
+    def post(self, request):
+        ret = {
+            "data": {},
+            "meta": {
+                "status": 200,
+                "message": ""
+            }
+        }
+        try:
+            bid = request.data["bid"]
+            uid = request.data["uid"]
+
+            stat = User_Bank_Status.objects.filter(bankid=bid, userid=uid)
+            bank = Bank.objects.filter(bankid=bid)
+            if stat.count() and bank.count():
+                stat = stat[0]
+                bank = bank[0]
+                if bank.status == 1 and stat.unlocked == 0:
+                    ret["meta"]["status"] = 500
+                    ret["meta"]["message"] = "用户尚未解锁题库"
+                    return Response(ret)
+                elif bank.status == 2:
+                    ret["meta"]["status"] = 500
+                    ret["meta"]["message"] = "题库当前不可用"
+                    return Response(ret)
+                elif stat.finished == 1:
+                    ret["meta"]["status"] = 200
+                    ret["meta"]["message"] = "用户已完成题库"
+                    return Response(ret)
+                else:
+                    if bank.questions != '':
+                        ret["data"]["totals"] = len(bank.questions.split(','))
+                        ret["data"]["bankname"] = bank.bankname
+                        for i, id in enumerate(bank.questions.split(',')):
+                            q = Question.objects.filter(questionid=id)
+                            qstat = User_Question_Status.objects.filter(questionid=id, userid=uid)
+                            if q.count() and qstat.count():
+                                q = q[0]
+                                qstat = qstat[0]
+                                if qstat.finished == 1:
+                                    continue
+                                else:
+                                    ret["data"]["curindex"] = i
+                                    ret["data"]["questionid"] = q.questionid
+                                    ret["data"]["name"] = q.name
+                                    ret["data"]["type"] = q.type
+                                    ret["data"]["time"] = qstat.time
+                                    ret["data"]["attempts"] = qstat.attempts
+                                    ret["data"]["content"] = q.content
+                                    return Response(ret)
+                            else:
+                                ret["meta"]["status"] = 500
+                                ret["meta"]["message"] = "内部错误"
+                                return Response(ret)
+                    else:
+                        ret["meta"]["status"] = 500
+                        ret["meta"]["message"] = "题库为空，请联系管理员"
+                        return Response(ret)
+            else:
+                ret["meta"]["status"] = 500
+                ret["meta"]["message"] = "用户尚未开启题库"
+                return Response(ret)
+
+        except Exception as error:
+            print(error)
+            ret["meta"]["status"] = 500
+            ret["meta"]["message"] = "内部错误"
+            return Response(ret)

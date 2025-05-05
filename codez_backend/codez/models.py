@@ -50,14 +50,17 @@ class ZAdmin(models.Model):
 
 # 题库与用户关系对应ORM模型
 class User_Bank_Status(models.Model):
-    userid = models.BigIntegerField(primary_key=True, max_length=15, unique=True)
-    bankid = models.BigIntegerField(max_length=15, unique=True)
+    id = models.BigIntegerField(primary_key=True, max_length=15, unique=True, default=0)
+    userid = models.BigIntegerField(max_length=15, default=0)
+    bankid = models.BigIntegerField(max_length=15, default=0)
     finished = models.IntegerField(default=0)
+    unlocked = models.IntegerField(default=0)
 
 # 题目与用户关系对应ORM模型
 class User_Question_Status(models.Model):
-    userid = models.BigIntegerField(primary_key=True, max_length=15, unique=True)
-    questionid = models.BigIntegerField(max_length=15, unique=True)
+    id = models.BigIntegerField(primary_key=True, max_length=15, unique=True, default=0)
+    userid = models.BigIntegerField(max_length=15, default=0)
+    questionid = models.BigIntegerField(max_length=15, default=0)
     finished = models.IntegerField(default=0)
     time = models.IntegerField(default=0)
     attempts = models.IntegerField(default=0)

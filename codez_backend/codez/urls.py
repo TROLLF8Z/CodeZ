@@ -20,6 +20,15 @@ urlpatterns = [
     path('user/change/description', views.User_Change_Desc_View.as_view()),
     path('user/change/info', views.User_Change_Info_View.as_view()),
 
+    # 获取用户与题库关系接口
+    path('user/bank/status/', views.User_Bank_Status_View.as_view()),
+
+    # 获取用户与题目关系接口
+    path('user/question/status/', views.User_Question_Status_View.as_view()),
+
+    # 获取用户作答题目内容接口
+    path('exam/current_question/', views.User_Current_Question_View.as_view()),
+
     # 首页获取题库列表接口
     path('banklist/', views.Bank_List_View.as_view()),
 
