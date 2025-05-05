@@ -57,6 +57,13 @@ const router = createRouter({
       hidden: true,
     },
     {
+      path: "/exam",
+      name: "exam",
+      meta: { title: "作答" },
+      component: () => import("@/views/exam/exam.vue"),
+      hidden: true,
+    },
+    {
       path: "/admin/login",
       name: "admin-login",
       meta: { title: "管理员登录" },

@@ -32,6 +32,45 @@
             <el-text style="font-size: 30px; color: #000000; font-weight: 500;">{{ this.bankname }}</el-text>
             <el-tag size="large" :type="this.display_status[this.status].type" style="margin-left: 15px;">{{ this.display_status[this.status].label }}</el-tag>
           </div>
+          <el-divider />
+          <div><el-text style="font-size: 14px; color: #000000; font-weight: 500">简介：</el-text></div>
+          <div style="margin-top: 10px;">
+            <el-card shadow="never">
+              <el-text style="font-size: 16px; color: #000000; font-weight: 500;">{{ this.description }}</el-text>
+            </el-card>
+          </div>
+          <el-table :data="this.displaylist" stripe border style="margin-top: 30px;">
+            <el-table-column label="题目名称" prop="name">
+              <template #default="scope">
+                <div style="display: flex; align-items: center"><el-text style="font-size: 16px; color: #000000; font-weight: 400;">{{ scope.row.name }}</el-text></div>
+              </template>
+            </el-table-column>
+            <el-table-column label="题目类型" prop="type">
+              <template #default="scope">
+                <div style="display: flex; align-items: center"><el-text style="font-size: 16px; color: #000000; font-weight: 400;">{{ this.question_type[scope.row.type] }}</el-text></div>
+              </template>
+            </el-table-column>
+            <el-table-column label="是否已完成" prop="finished">
+              <template #default="scope">
+                <div style="display: flex; align-items: center">
+                  <el-tag type="success" v-if="scope.row.finished === 1" size="large">已完成</el-tag>
+                  <el-tag type="danger" v-if="scope.row.finished === 0" size="large">未完成</el-tag>
+                </div>
+              </template>
+            </el-table-column>
+            <el-table-column label="已尝试次数" prop="attempts">
+              <template #default="scope">
+                <div style="display: flex; align-items: center"><el-text style="font-size: 16px; color: #000000; font-weight: 400;">{{ scope.row.attempts }}</el-text></div>
+              </template>
+            </el-table-column>
+          </el-table>
+          <div style="display: flex; align-items: center; justify-content: center; margin-top: 50px;" v-if="this.status === 1">
+            <el-button type="warning" @click="" v-if="this.bank_unlocked === 0">花费 {{ this.price }}ZCoins 解锁</el-button>
+            <el-button type="primary" @click="" v-if="this.bank_unlocked === 1">开始作答</el-button>
+          </div>
+          <div style="display: flex; align-items: center; justify-content: center; margin-top: 50px;" v-if="this.status === 0">
+            <el-button type="primary" @click="" >开始作答</el-button>
+          </div>
         </el-card>
       </div>
     </el-main>
@@ -55,6 +94,8 @@ export default {
       description: "",
       status: 0,
       price: 0,
+      bank_finished: 0,
+      bank_unlocked: 0,
       questions: [],
       displaylist: [],
 
@@ -67,7 +108,8 @@ export default {
           type: "warning",
           label: "收费",
         }
-      ]
+      ],
+      question_type: ['选择题', '填空题', '简答题', '编程题']
     }
   },
   mounted() {
@@ -87,8 +129,8 @@ export default {
       this.$router.push('/login')
       this.$message.success('退出成功')
     },
-    getbankinfo() {
-      this.$request.post("/codez/admin/banks/info/", {
+    async getbankinfo() {
+      await this.$request.post("/codez/admin/banks/info/", {
         bid: this.bid,
       }).then(res => {
         if (res.data.meta.status === 200) {
@@ -100,11 +142,57 @@ export default {
           if (this.status === 2) {
             this.$router.push('/main');
             this.$message.error("题库当前不可用");
+          } else {
+            this.displayquestion();
           }
+        } else {
+          this.$router.push('/main');
+          this.$message.error(res.data.meta.message);
+        }
+      });
+
+      await this.$request.post("/codez/user/bank/status/", {
+        bid: this.bid,
+        uid: this.uid,
+      }).then(res => {
+        if (res.data.meta.status === 200) {
+          this.bank_finished = res.data.data.finished;
+          this.bank_unlocked = res.data.data.unlocked;
         } else {
           this.$message.error(res.data.meta.message);
         }
       });
+    },
+    async displayquestion() {
+      if (this.questions !== '') {
+        this.displaylist = [];
+        let q = '';
+        for (q of this.questions.split(',')) {
+          let tmpobj = {};
+          await this.$request.post("/codez/admin/questions/info/", {
+            qid: q,
+          }).then(res => {
+            if (res.data.meta.status === 200) {
+              tmpobj.qid = res.data.data.qid;
+              tmpobj.name = res.data.data.name;
+              tmpobj.type = res.data.data.type;
+            }
+          });
+
+          await this.$request.post("/codez/user/question/status/", {
+            uid: this.uid,
+            qid: q,
+          }).then(res => {
+            if (res.data.meta.status === 200) {
+              tmpobj.finished = res.data.data.finished;
+              tmpobj.time = res.data.data.time;
+              tmpobj.attempts = res.data.data.attempts;
+            }
+          });
+          this.displaylist.push(tmpobj);
+        }
+        console.log(this.displaylist);
+      }
     }
   }
 }

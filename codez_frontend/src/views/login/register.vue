@@ -70,7 +70,7 @@
                   console.log(res);
                   if (res.data.meta.status === 200) {
                     this.$message.success("注册成功")
-                    setTimeout(()=>{this.$router.push('/login')}, 2000)
+                    setTimeout(()=>{this.$router.push('/login')}, 1000)
                   } else {
                     this.reggin = false;
                     this.$message.error(res.data.meta.message);
