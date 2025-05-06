@@ -1055,6 +1055,8 @@ class User_Bank_Status_View(APIView):
                 stat.finished = 0
                 stat.unlocked = 0
                 stat.save()
+                ret["data"]["finished"] = stat.finished
+                ret["data"]["unlocked"] = stat.unlocked
                 ret["meta"]["status"] = 200
                 ret["meta"]["message"] = "未找到对应关系词条，已成功创建"
                 return Response(ret)
@@ -1109,6 +1111,69 @@ class User_Question_Status_View(APIView):
                 ret["meta"]["status"] = 200
                 ret["meta"]["message"] = "未找到对应关系词条，已成功创建"
                 return Response(ret)
+
+        except Exception as error:
+            print(error)
+            ret["meta"]["status"] = 500
+            ret["meta"]["message"] = "内部错误"
+            return Response(ret)
+
+# 用户购买题库接口
+class User_Bank_Purchase_View(APIView):
+    def post(self, request):
+        ret = {
+            "data": {},
+            "meta": {
+                "status": 200,
+                "message": ""
+            }
+        }
+        try:
+            bid = request.data["bid"]
+            uid = request.data["uid"]
+
+            stat = User_Bank_Status.objects.filter(bankid=bid, userid=uid)
+            if stat.count():
+                stat = stat[0]
+            else:
+                stat = User_Bank_Status()
+                result = True
+                newid = 1000000 + User_Bank_Status.objects.count()
+                while result:
+                    newid += 1
+                    tmpstat = User_Bank_Status.objects.filter(id=newid)
+                    result = tmpstat.count()
+                stat.id = newid
+                stat.userid = uid
+                stat.bankid = bid
+                stat.finished = 0
+                stat.unlocked = 0
+                stat.save()
+
+            if stat.unlocked == 1:
+                ret["meta"]["status"] = 500
+                ret["meta"]["message"] = "题库已经解锁"
+                return Response(ret)
+            else:
+                user = ZUserProfile.objects.filter(userid=uid)
+                bank = Bank.objects.filter(bankid=bid)
+                if user.count() and bank.count():
+                    user = user[0]
+                    bank = bank[0]
+                    if user.zcoins >= bank.price:
+                        user.zcoins -= bank.price
+                        user.save()
+                        stat.unlocked = 1
+                        stat.save()
+                        ret["data"]["zcoins"] = user.zcoins
+                        ret["meta"]["status"] = 200
+                        ret["meta"]["message"] = "购买成功"
+                        return Response(ret)
+                    else:
+                        ret["meta"]["status"] = 500
+                        ret["meta"]["message"] = "ZCoins 不足"
+                        return Response(ret)
+
 
         except Exception as error:
             print(error)
@@ -1179,6 +1244,90 @@ class User_Current_Question_View(APIView):
             else:
                 ret["meta"]["status"] = 500
                 ret["meta"]["message"] = "用户尚未开启题库"
+                return Response(ret)
+
+        except Exception as error:
+            print(error)
+            ret["meta"]["status"] = 500
+            ret["meta"]["message"] = "内部错误"
+            return Response(ret)
+
+# 用户作答用时记录接口
+class User_Time_Record_View(APIView):
+    def post(self, request):
+        ret = {
+            "data": {},
+            "meta": {
+                "status": 200,
+                "message": ""
+            }
+        }
+        try:
+            qid = request.data["qid"]
+            uid = request.data["uid"]
+            time = request.data["time"]
+
+            stat = User_Question_Status.objects.filter(questionid=qid, userid=uid)
+            if stat.count():
+                stat = stat[0]
+                stat.time = int(time)
+                stat.save()
+                ret["meta"]["status"] = 200
+                ret["meta"]["message"] = "获取成功"
+                return Response(ret)
+            else:
+                ret["meta"]["status"] = 404
+                ret["meta"]["message"] = "未找到对应关系词条"
+                return Response(ret)
+
+        except Exception as error:
+            print(error)
+            ret["meta"]["status"] = 500
+            ret["meta"]["message"] = "内部错误"
+            return Response(ret)
+
+# 用户提交答案获取评分接口
+class User_Exam_Submit_View(APIView):
+    def post(self, request):
+        ret = {
+            "data": {},
+            "meta": {
+                "status": 200,
+                "message": ""
+            }
+        }
+        try:
+            qid = request.data["qid"]
+            uid = request.data["uid"]
+            answer = request.data["answer"]
+
+            question = Question.objects.filter(questionid=qid)
+            stat = User_Question_Status.objects.filter(questionid=qid, userid=uid)
+            stat = stat[0]
+            stat.attempts += 1
+            stat.save()
+            user = ZUserProfile.objects.filter(userid=uid)
+            if question.count():
+                question = question[0]
+                if question.type in [0, 1]:
+                    if answer == question.answer:
+                        stat.finished = 1
+                        stat.save()
+                        user = user[0]
+                        user.zcoins += 10
+                        user.save()
+                        ret["data"]["zcoin"] = user.zcoins
+                        ret["meta"]["status"] = 200
+                        ret["meta"]["message"] = "回答正确"
+                        return Response(ret)
+                    else:
+                        ret["data"]["attempts"] = stat.attempts
+                        ret["meta"]["status"] = 200
+                        ret["meta"]["message"] = "回答错误"
+                        return Response(ret)
+            else:
+                ret["meta"]["status"] = 404
+                ret["meta"]["message"] = "题目不存在"
                 return Response(ret)
 
         except Exception as error:

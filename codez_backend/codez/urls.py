@@ -26,8 +26,17 @@ urlpatterns = [
     # 获取用户与题目关系接口
     path('user/question/status/', views.User_Question_Status_View.as_view()),
 
+    # 用户购买题库接口
+    path('user/bank/purchase/', views.User_Bank_Purchase_View.as_view()),
+
     # 获取用户作答题目内容接口
     path('exam/current_question/', views.User_Current_Question_View.as_view()),
+
+    # 用户作答用时记录接口
+    path('exam/record_time/', views.User_Time_Record_View.as_view()),
+
+    # 用户提交答案获取评分接口
+    path('exam/submit/', views.User_Exam_Submit_View.as_view()),
 
     # 首页获取题库列表接口
     path('banklist/', views.Bank_List_View.as_view()),
