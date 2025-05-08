@@ -37,10 +37,10 @@
             <el-text style="font-size: 20px; font-weight: 500; color:#000000; margin-right: 15px;">{{ item.name }}</el-text>
             <el-tag :type="this.display_status[item.status].type">{{ this.display_status[item.status].label }}</el-tag>
           </div>
-          <div v-if="item.type === '题库'" style="margin-top: 10px;"><el-text style="font-size: 14px; font-weight: 500; color:#000000">{{ item.description }}</el-text></div>
+          <div v-if="item.type === '题库'" style="margin-top: 10px;"><el-text style="font-size: 14px; font-weight: 500; color:#000000; white-space: pre-line">{{ item.description }}</el-text></div>
 
           <div v-if="item.type === '用户'"><el-text style="font-size: 20px; font-weight: 500; color:#000000; margin-right: 15px;">{{ item.name }}</el-text></div>
-          <div v-if="item.type === '用户'" style="margin-top: 10px;"><el-text style="font-size: 14px; font-weight: 500; color:#000000">个人简介：{{ item.description }}</el-text></div>
+          <div v-if="item.type === '用户'" style="margin-top: 10px;"><el-text style="font-size: 14px; font-weight: 500; color:#000000; white-space: pre-line">个人简介：{{ item.description }}</el-text></div>
         </el-card>
       </div>
 

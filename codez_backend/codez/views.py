@@ -10,6 +10,7 @@ from .Serializer import *
 from .models import *
 import datetime, jwt, os
 from .Coze_API import CodeZ_AIJudge
+from .codeclient import CodeClient
 
 # 密码登录接口
 class Login_Pwd_View(APIView):
@@ -1222,7 +1223,20 @@ class User_Current_Question_View(APIView):
                                 q = q[0]
                                 qstat = qstat[0]
                                 if qstat.finished == 1:
-                                    continue
+                                    if i == len(bank.questions.split(',')) - 1:
+                                        stat.finished = 1
+                                        user = ZUserProfile.objects.filter(userid=uid)
+                                        user = user[0]
+                                        user.medals += str(bank.bankid)
+                                        user.finishes += 1
+                                        user.zcoins += 50
+                                        user.save()
+                                        stat.save()
+                                        ret["meta"]["status"] = 200
+                                        ret["meta"]["message"] = "用户已完成题库"
+                                        return Response(ret)
+                                    else:
+                                        continue
                                 else:
                                     ret["data"]["curindex"] = i
                                     ret["data"]["questionid"] = q.questionid
@@ -1231,6 +1245,8 @@ class User_Current_Question_View(APIView):
                                     ret["data"]["time"] = qstat.time
                                     ret["data"]["attempts"] = qstat.attempts
                                     ret["data"]["content"] = q.content
+                                    ret["meta"]["status"] = 200
+                                    ret["meta"]["message"] = "获取成功"
                                     return Response(ret)
                             else:
                                 ret["meta"]["status"] = 500
@@ -1275,6 +1291,7 @@ class User_Time_Record_View(APIView):
                 ret["meta"]["message"] = "获取成功"
                 return Response(ret)
             else:
+                print(qid, uid)
                 ret["meta"]["status"] = 404
                 ret["meta"]["message"] = "未找到对应关系词条"
                 return Response(ret)
@@ -1289,7 +1306,9 @@ class User_Time_Record_View(APIView):
 class User_Exam_Submit_View(APIView):
     def post(self, request):
         ret = {
-            "data": {},
+            "data": {
+                "result": [],
+            },
             "meta": {
                 "status": 200,
                 "message": ""
@@ -1314,6 +1333,7 @@ class User_Exam_Submit_View(APIView):
                         stat.finished = 1
                         stat.save()
                         user.zcoins += 10
+                        user.corrects += 1
                         user.save()
                         ret["data"]["zcoin"] = user.zcoins
                         ret["meta"]["status"] = 200
@@ -1343,6 +1363,7 @@ class User_Exam_Submit_View(APIView):
                             stat.finished = 1
                             stat.save()
                             user.zcoins += 10
+                            user.corrects += 1
                             user.save()
                             ret["data"]["zcoin"] = user.zcoins
                             ret["meta"]["status"] = 200
@@ -1353,6 +1374,42 @@ class User_Exam_Submit_View(APIView):
                             ret["meta"]["status"] = 200
                             ret["meta"]["message"] = "回答错误"
                             return Response(ret)
+                elif question.type == 3:
+                    tmpfile = 1
+                    while os.path.exists('./recvfile_%d.py' % (tmpfile)):
+                        tmpfile += 1
+                    tmpfile = 'recvfile_%d.py' % (tmpfile)
+                    with open(tmpfile, 'w') as f:
+                        tmptxt = ''
+                        for i, line in enumerate(answer):
+                            if not i:
+                                tmptxt = line
+                            else:
+                                tmptxt += '\n' + line
+                        f.write(tmptxt)
+                    cc = CodeClient('localhost', 2971, srcFile=tmpfile)
+                    while cc.active:
+                        pass
+                    with open('runret.txt', 'r') as f:
+                        for line in f.readlines():
+                            ret["data"]["result"].append(line)
+                    os.remove(tmpfile)
+                    if ''.join(ret["data"]["result"]).strip('\n') != question.answer:
+                        print(''.join(ret["data"]["result"]).strip('\n'))
+                        ret["data"]["attempts"] = stat.attempts
+                        ret["meta"]["status"] = 200
+                        ret["meta"]["message"] = "回答错误"
+                        return Response(ret)
+                    else:
+                        stat.finished = 1
+                        stat.save()
+                        user.zcoins += 10
+                        user.corrects += 1
+                        user.save()
+                        ret["data"]["zcoin"] = user.zcoins
+                        ret["meta"]["status"] = 200
+                        ret["meta"]["message"] = "回答正确"
+                        return Response(ret)
             else:
                 ret["meta"]["status"] = 404
                 ret["meta"]["message"] = "题目不存在"

@@ -47,7 +47,7 @@
           </div>
           <div style="margin-top: 20px">
             <el-card shadow="hover">
-              <el-text class='w-500px mb-2' style="font-size: 16px; font-weight: 600; color:#333333 " truncated>个人简介：{{ description }}</el-text>
+              <el-text class='w-500px mb-2' style="font-size: 16px; font-weight: 600; color:#333333; white-space: pre-line" truncated>个人简介：{{ description }}</el-text>
             </el-card>
           </div>
           <div style="margin-top: 10px; margin-left: 17px;">

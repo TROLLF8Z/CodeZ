@@ -72,9 +72,9 @@
           </el-table>
           <div style="display: flex; align-items: center; justify-content: center; margin-top: 50px;" v-if="this.status === 1">
             <el-button type="warning" @click="buybank" v-if="this.bank_unlocked === 0">花费 {{ this.price }}ZCoins 解锁</el-button>
-            <el-button type="primary" @click="pushbank" v-if="this.bank_unlocked === 1">开始作答</el-button>
+            <el-button type="primary" @click="pushbank" v-if="this.bank_unlocked === 1 && this.bank_finished === 0">开始作答</el-button>
           </div>
-          <div style="display: flex; align-items: center; justify-content: center; margin-top: 50px;" v-if="this.status === 0">
+          <div style="display: flex; align-items: center; justify-content: center; margin-top: 50px;" v-if="this.status === 0 && this.bank_finished === 0">
             <el-button type="primary" @click="pushbank" >开始作答</el-button>
           </div>
         </el-card>

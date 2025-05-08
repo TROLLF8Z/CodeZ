@@ -45,7 +45,7 @@
             <el-text style="font-size: 20px; font-weight: 500; color:#000000; margin-right: 15px;">{{ bank.name }}</el-text>
             <el-tag :type="this.display_status[bank.status].type">{{ this.display_status[bank.status].label }}</el-tag>
           </div>
-          <div style="margin-top: 10px;"><el-text style="font-size: 14px; font-weight: 500; color:#000000">{{ bank.description }}</el-text></div>
+          <div style="margin-top: 10px;"><el-text style="font-size: 14px; font-weight: 500; color:#000000; white-space: pre-line">{{ bank.description }}</el-text></div>
         </el-card>
       </div>
 

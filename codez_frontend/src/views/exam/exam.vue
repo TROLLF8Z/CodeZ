@@ -42,13 +42,13 @@
             </div>
           </div>
           <el-divider />
-          <el-text style="font-size: 20px; color: #000000; font-weight: 500">{{ this.content }}</el-text>
+          <el-text style="font-size: 20px; color: #000000; font-weight: 500; white-space: pre-line">{{ this.content }}</el-text>
         </el-card>
         <el-card style="width: 100%">
           <div style="display: flex; align-items: center">
             <el-button type="primary" @click="submit_answer">提交作答</el-button>
           </div>
-          <el-card shadow="never" style="margin-top: 20px;">
+          <el-card shadow="never" style="margin-top: 20px;" v-loading="submitting">
             <PythonEditor v-model="this.user_answer" />
           </el-card>
         </el-card>
@@ -70,7 +70,7 @@
             </div>
           </div>
           <el-divider />
-          <el-text style="font-size: 20px; color: #000000; font-weight: 500">{{ this.content }}</el-text>
+          <el-text style="font-size: 20px; color: #000000; font-weight: 500; white-space: pre-line">{{ this.content }}</el-text>
           <el-divider />
           <el-card shadow="never">
             <div style="display: flex; align-items: center" v-if="this.type === 0">
@@ -148,6 +148,7 @@ export default defineComponent({
 
       requestsum: 0,
       dialogVisible: false,
+      submitting: false,
       displaytime: '',
       timerID: 0,
 
@@ -181,44 +182,53 @@ export default defineComponent({
         uid: this.uid,
       }).then(res => {
         if (res.data.meta.status === 200) {
-          this.name = res.data.data.name;
-          this.bankname = res.data.data.bankname;
-          this.content = res.data.data.content;
-          this.time = res.data.data.time;
-          this.type = res.data.data.type;
-          this.attempts = res.data.data.attempts;
-          this.curindex = res.data.data.curindex;
-          this.totals = res.data.data.totals;
-          this.qid = res.data.data.questionid;
-          this.requestsum = 0;
-          this.user_answer = '';
+          if (res.data.meta.message === "获取成功") {
+            this.name = res.data.data.name;
+            this.bankname = res.data.data.bankname;
+            this.content = res.data.data.content;
+            this.time = res.data.data.time;
+            this.type = res.data.data.type;
+            this.attempts = res.data.data.attempts;
+            this.curindex = res.data.data.curindex;
+            this.totals = res.data.data.totals;
+            this.qid = res.data.data.questionid;
+            this.requestsum = 0;
+            this.user_answer = '';
+            this.formattime();
+            this.timerecorder();
+          } else if (res.data.meta.message === "用户已完成题库") {
+            this.$message.success("恭喜你已完成该题库！");
+            setTimeout(()=>{
+              this.$router.push('/bank?id=' + this.bid);
+            })
+          }
         } else {
           this.$router.push('/bank?id=' + this.bid);
           this.$message.error(res.data.meta.message);
         }
       });
-      this.formattime();
-      this.timerecorder();
     },
     timerecorder() {
-      this.timerID = setInterval(() => {
-        this.time++;
-        this.formattime();
-        this.requestsum++;
-        if (this.requestsum >= 5) {
-          this.requestsum = 0;
-          this.$request.post("/codez/exam/record_time/", {
-            qid: this.qid,
-            uid: this.uid,
-            time: this.time,
-          }).then(res => {
-            if (res.data.meta.status === 200) {
-            } else {
-              this.$message.error(res.data.meta.message);
-            }
-          });
-        }
-      }, 1000);
+      if (this.timerID !== 0) {
+        this.timerID = setInterval(() => {
+          this.time++;
+          this.formattime();
+          this.requestsum++;
+          if (this.requestsum >= 5) {
+            this.requestsum = 0;
+            this.$request.post("/codez/exam/record_time/", {
+              qid: this.qid,
+              uid: this.uid,
+              time: this.time,
+            }).then(res => {
+              if (res.data.meta.status === 200) {
+              } else {
+                this.$message.error(res.data.meta.message);
+              }
+            });
+          }
+        }, 1000);
+      }
     },
     formattime() {
       this.displaytime = '已用时：' + format(new Date(this.time * 1000), 'mm:ss');
@@ -243,7 +253,7 @@ export default defineComponent({
       if (this.user_answer === '') {
         this.$message.error("您的作答为空，无法提交")
       } else {
-        if (this.type === 0 || this.type === 1 || this.type === 3) {
+        if (this.type === 0 || this.type === 1) {
           await this.$request.post("/codez/exam/submit/", {
             qid: this.qid,
             uid: this.uid,
@@ -269,7 +279,7 @@ export default defineComponent({
           this.return_score = '';
           this.return_reason = '';
           this.dialogVisible = true;
-          await this.$request.post("/codez/exam/submit/", {
+          this.$request.post("/codez/exam/submit/", {
             qid: this.qid,
             uid: this.uid,
             answer: this.user_answer,
@@ -282,6 +292,38 @@ export default defineComponent({
                 localStorage.setItem("zcoins", res.data.data.zcoin);
               } else {
                 this.attempts = res.data.data.attempts;
+              }
+            } else {
+              this.$message.error(res.data.meta.message);
+            }
+          });
+        } else if (this.type === 3) {
+          this.submitting = true;
+          let user_code = this.user_answer.split('\n');
+          let line = '';
+          let answerlist = [];
+          for (line of user_code) {
+            answerlist.push(line);
+          }
+          await this.$request.post("/codez/exam/submit/", {
+            qid: this.qid,
+            uid: this.uid,
+            answer: answerlist,
+          }).then(res => {
+            if (res.data.meta.status === 200) {
+              if (res.data.meta.message === '回答正确') {
+                localStorage.setItem("zcoins", res.data.data.zcoin);
+                this.attempts = res.data.data.attempts;
+                this.$message.success("回答正确");
+                setTimeout(() => {
+                  this.getquestion();
+                }, 1000)
+              } else {
+                this.submitting = false;
+                this.attempts = res.data.data.attempts;
+                this.$message.error(res.data.meta.message);
+                console.log(res.data.data.result);
+                this.$message.info(res.data.data.result);
               }
             } else {
               this.$message.error(res.data.meta.message);
