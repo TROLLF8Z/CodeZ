@@ -63,6 +63,12 @@
                 <div style="display: flex; align-items: center"><el-text style="font-size: 16px; color: #000000; font-weight: 400;">{{ scope.row.attempts }}</el-text></div>
               </template>
             </el-table-column>
+            <el-table-column label="评论区">
+              <template #default="scope">
+                <el-button size="small" type="primary" autocomplete="off" @click="this.$router.push('/comment?id=' + scope.row.qid)" v-if="scope.row.finished === 1">进入</el-button>
+                <el-button size="small" type="danger" autocomplete="off" disabled v-if="scope.row.finished === 0">请先完成本题</el-button>
+              </template>
+            </el-table-column>
           </el-table>
           <div style="display: flex; align-items: center; justify-content: center; margin-top: 50px;" v-if="this.status === 1">
             <el-button type="warning" @click="buybank" v-if="this.bank_unlocked === 0">花费 {{ this.price }}ZCoins 解锁</el-button>

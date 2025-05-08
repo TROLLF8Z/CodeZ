@@ -26,6 +26,7 @@
             <el-menu-item index="/admin/users"><el-icon><User /></el-icon>用户管理</el-menu-item>
             <el-menu-item index="/admin/banks"><el-icon><Box /></el-icon>题库管理</el-menu-item>
             <el-menu-item index="/admin/questions"><el-icon><Document /></el-icon>题目管理</el-menu-item>
+            <el-menu-item index="/admin/comments"><el-icon><ChatLineRound /></el-icon>评论管理</el-menu-item>
           </div>
         </el-menu>
       </el-aside>
@@ -38,8 +39,10 @@
 
 <script>
 import * as ElementPlusIconVue from "@element-plus/icons-vue";
+import {Box, ChatLineRound, Document} from "@element-plus/icons-vue";
 
 export default {
+  components: {Box, Document, ChatLineRound},
   data() {
     return {
       displayname: "",

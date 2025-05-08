@@ -26,23 +26,48 @@
       </div>
     </el-header>
     <el-main>
-      <div class="maincard" v-if="!this.type === '3'">
-        <el-card class="maincard.card">
-        </el-card>
-        <el-card class="maincard.card">
-        </el-card>
-      </div>
-      <div class="maincard" v-else>
-        <el-card style="width: 1000px">
+      <div class="maincard" v-if="this.type === 3">
+        <el-card style="width: 50%; margin-right: 30px;">
           <div style="display: flex; align-items: center; justify-content: space-between">
             <div style="display: flex; align-items: center">
+              <el-button type="info" @click="this.$router.push('/bank?id=' + this.bid)">返回</el-button>
               <el-text style="font-size: 30px; color: #333333; font-weight: 500">{{ this.name }}</el-text>
               <el-tag size="large" style="margin-left: 15px;">{{ this.question_type[this.type] }}</el-tag>
             </div>
             <div style="display: flex; align-items: center">
               <el-text style="font-size: 14px; color: #333333; font-weight: 500">已提交次数：{{ this.attempts }}<br/>{{ this.displaytime }}</el-text>
             </div>
-            <div style="display: flex; align-items: center"><el-text style="font-size: 14px; color: #333333; font-weight: 500; margin-left: auto;">当前题库：{{ this.bankname }}<br/>当前题目索引：{{ this.curindex + 1 }} / {{ this.totals }}</el-text></div>
+            <div style="display: flex; align-items: center">
+              <el-text style="font-size: 14px; color: #333333; font-weight: 500; margin-left: auto;">当前题库：{{ this.bankname }}<br/>当前题目索引：{{ this.curindex + 1 }} / {{ this.totals }}</el-text>
+            </div>
+          </div>
+          <el-divider />
+          <el-text style="font-size: 20px; color: #000000; font-weight: 500">{{ this.content }}</el-text>
+        </el-card>
+        <el-card style="width: 100%">
+          <div style="display: flex; align-items: center">
+            <el-button type="primary" @click="submit_answer">提交作答</el-button>
+          </div>
+          <el-card shadow="never" style="margin-top: 20px;">
+            <PythonEditor v-model="this.user_answer" />
+          </el-card>
+        </el-card>
+      </div>
+
+      <div class="maincard" v-else>
+        <el-card style="width: 1000px">
+          <div style="display: flex; align-items: center; justify-content: space-between">
+            <div style="display: flex; align-items: center">
+              <el-button type="info" @click="this.$router.push('/bank?id=' + this.bid)">返回</el-button>
+              <el-text style="font-size: 30px; color: #333333; font-weight: 500; margin-left: 30px;">{{ this.name }}</el-text>
+              <el-tag size="large" style="margin-left: 15px;">{{ this.question_type[this.type] }}</el-tag>
+            </div>
+            <div style="display: flex; align-items: center">
+              <el-text style="font-size: 14px; color: #333333; font-weight: 500">已提交次数：{{ this.attempts }}<br/>{{ this.displaytime }}</el-text>
+            </div>
+            <div style="display: flex; align-items: center">
+              <el-text style="font-size: 14px; color: #333333; font-weight: 500; margin-left: auto;">当前题库：{{ this.bankname }}<br/>当前题目索引：{{ this.curindex + 1 }} / {{ this.totals }}</el-text>
+            </div>
           </div>
           <el-divider />
           <el-text style="font-size: 20px; color: #000000; font-weight: 500">{{ this.content }}</el-text>
@@ -63,16 +88,42 @@
           <div style="display: flex; align-items: center; justify-content: center; margin-top: 15px;"><el-button type="primary" @click="submit_answer">提交作答</el-button></div>
         </el-card>
       </div>
+
+      <el-dialog style="width: 500px" v-model="this.dialogVisible" title="获取评分" :before-close="dialogClose">
+        <div style="display: flex; justify-content: center; align-items: center" v-if="this.return_score === ''">
+          <el-text style="font-size: 30px; color: #000000; font-weight: 600">等待AI评分中...</el-text>
+        </div>
+        <div style="display: flex; justify-content: center; align-items: center" v-if="this.return_score !== ''"><el-text style="font-size: 28px; color: #000000; font-weight: 500">AI评分</el-text></div>
+        <div style="display: flex; align-items: center" v-if="this.return_score !== ''"><el-text style="font-size: 16px; color: #000000; font-weight: 400">AI打分：{{ this.return_score }}</el-text></div>
+        <div style="display: flex; align-items: center" v-if="this.return_score !== ''"><el-text style="font-size: 16px; color: #000000; font-weight: 400">打分理由：{{ this.return_reason }}</el-text></div>
+        <div style="display: flex; justify-content: center; align-items: center" v-if="this.return_score !== ''"><el-button type="primary" @click="dialogconfirm">确定</el-button></div>
+      </el-dialog>
     </el-main>
   </el-container>
 </template>
 
 <script>
-import {Plus} from "@element-plus/icons-vue";
+import { defineComponent } from "vue";
 import { format } from "date-fns";
+import { basicSetup } from 'codemirror'
+import { EditorView } from '@codemirror/view'
+import { EditorState } from '@codemirror/state'
+import { python } from '@codemirror/lang-python'
+import PythonEditor from '@/components/PythonEditor.vue'
 
-export default {
-  components: {Plus},
+export default defineComponent({
+  components: { PythonEditor },
+  props: {
+    modelValue: {
+      type: String,
+      default: ''
+    },
+    height: {
+      type: String,
+      default: '500px'
+    }
+  },
+  emits: ['update:modelValue'],
   data() {
     return {
       uid: 0,
@@ -92,15 +143,22 @@ export default {
       totals: 0,
       curindex: 0,
       user_answer: '',
+      return_score: '',
+      return_reason: '',
 
       requestsum: 0,
+      dialogVisible: false,
       displaytime: '',
       timerID: 0,
+
+      editor: null,
+      state: null,
 
       question_type: ['选择题', '填空题', '简答题', '编程题']
     }
   },
   mounted() {
+    this.initializeEditor();
     this.bid = this.$route.query.bid;
     this.uid = localStorage.getItem('uid');
     this.displayname = localStorage.getItem("displayname");
@@ -133,7 +191,7 @@ export default {
           this.totals = res.data.data.totals;
           this.qid = res.data.data.questionid;
           this.requestsum = 0;
-            this.user_answer = '';
+          this.user_answer = '';
         } else {
           this.$router.push('/bank?id=' + this.bid);
           this.$message.error(res.data.meta.message);
@@ -181,43 +239,167 @@ export default {
         this.timerID = null;
       }
     },
-    submit_answer() {
+    async submit_answer() {
       if (this.user_answer === '') {
         this.$message.error("您的作答为空，无法提交")
       } else {
-        this.$request.post("/codez/exam/submit/", {
-          qid: this.qid,
-          uid: this.uid,
-          answer: this.user_answer,
-        }).then(res => {
-          if (res.data.meta.status === 200) {
-            if (res.data.meta.message === '回答正确') {
-              localStorage.setItem("zcoins", res.data.data.zcoins);
-              this.$message.success("回答正确");
-              setTimeout(() => {
-                this.getquestion();
-              }, 1000)
+        if (this.type === 0 || this.type === 1 || this.type === 3) {
+          await this.$request.post("/codez/exam/submit/", {
+            qid: this.qid,
+            uid: this.uid,
+            answer: this.user_answer,
+          }).then(res => {
+            if (res.data.meta.status === 200) {
+              if (res.data.meta.message === '回答正确') {
+                localStorage.setItem("zcoins", res.data.data.zcoin);
+                this.attempts = res.data.data.attempts;
+                this.$message.success("回答正确");
+                setTimeout(() => {
+                  this.getquestion();
+                }, 1000)
+              } else {
+                this.attempts = res.data.data.attempts;
+                this.$message.error(res.data.meta.message);
+              }
             } else {
-              this.attempts = res.data.data.attempts;
               this.$message.error(res.data.meta.message);
             }
-          } else {
-            this.$message.error(res.data.meta.message);
-          }
-        });
+          });
+        } else if (this.type === 2) {
+          this.return_score = '';
+          this.return_reason = '';
+          this.dialogVisible = true;
+          await this.$request.post("/codez/exam/submit/", {
+            qid: this.qid,
+            uid: this.uid,
+            answer: this.user_answer,
+          }).then(res => {
+            if (res.data.meta.status === 200) {
+              this.return_score = res.data.data.score;
+              this.return_reason = res.data.data.reason;
+              if (Number(this.return_score) >= 60) {
+                this.zcoin = res.data.data.zcoins
+                localStorage.setItem("zcoins", res.data.data.zcoin);
+              } else {
+                this.attempts = res.data.data.attempts;
+              }
+            } else {
+              this.$message.error(res.data.meta.message);
+            }
+          });
+        }
       }
+    },
+    dialogClose(done) {
+      if (this.return_score === '') {
+        return 1
+      } else {
+        done()
+      }
+    },
+    dialogconfirm() {
+      if (Number(this.return_score) >= 60) {
+        this.getquestion();
+      } else {
+        this.dialogVisible = false;
+      }
+    },
+    initializeEditor() {
+      const extensions = [
+        basicSetup,
+        python(),
+        EditorView.lineWrapping,
+        EditorView.updateListener.of((update) => {
+          if (update.docChanged) {
+            this.$emit('update:modelValue', update.state.doc.toString())
+          }
+        })
+      ]
+
+      this.state = EditorState.create({
+        doc: this.modelValue,
+        extensions
+      })
+
+      this.editor = new EditorView({
+        state: this.state,
+        parent: this.$refs.editorContainer
+      })
     }
   },
   beforeRouteLeave() {
+    if (this.editor) {
+      this.editor.destroy();
+    }
     this.leavingpage();
   },
   beforeUnmount() {
+    if (this.editor) {
+      this.editor.destroy();
+    }
     this.leavingpage();
+  },
+  watch: {
+    modelValue(newVal) {
+      if (newVal !== this.editor.state.doc.toString()) {
+        this.editor.dispatch({
+          changes: {
+            from: 0,
+            to: this.editor.state.doc.length,
+            insert: newVal
+          }
+        })
+      }
+    }
   }
-}
+})
 </script>
 
 <style scoped>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
+
+.jetbrains-editor .cm-editor {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.6;
+}
+
+.jetbrains-editor .cm-content {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.6;
+}
+
+.jetbrains-editor .cm-gutters {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+}
+
+.jetbrains-editor .cm-cursor {
+  border-left-color: #ffcc00;
+}
+
+.jetbrains-editor .cm-selectionBackground {
+  background: rgba(100, 255, 100, 0.2);
+}
+
+.editor-container {
+  height: 100%;
+  overflow: hidden;
+  border: 1px solid #444;
+  border-radius: 4px;
+}
+
+.cm-editor {
+  height: 100%;
+}
+
+.cm-scroller {
+  overflow: auto;
+}
+
 .maincard {
   display: flex;
   justify-content: center;
@@ -225,7 +407,6 @@ export default {
   height: 100%;
   width: 100%;
   margin: auto;
-  max-width: 1000px;
 }
 
 .el-icon.avatar-uploader-icon {

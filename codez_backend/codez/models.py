@@ -64,3 +64,10 @@ class User_Question_Status(models.Model):
     finished = models.IntegerField(default=0)
     time = models.IntegerField(default=0)
     attempts = models.IntegerField(default=0)
+
+# 题目评论区ORM模型
+class Question_Comment(models.Model):
+    id = models.BigIntegerField(primary_key=True, max_length=15, unique=True, default=0)
+    userid = models.BigIntegerField(max_length=15, default=0)
+    questionid = models.BigIntegerField(max_length=15, default=0)
+    comment = models.TextField()

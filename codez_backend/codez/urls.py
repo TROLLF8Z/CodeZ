@@ -38,6 +38,12 @@ urlpatterns = [
     # 用户提交答案获取评分接口
     path('exam/submit/', views.User_Exam_Submit_View.as_view()),
 
+    # 获取题目评论接口
+    path('comment/info/', views.Question_Comment_View.as_view()),
+
+    # 提交评论接口
+    path('comment/submit/', views.Comment_Submit_View.as_view()),
+
     # 首页获取题库列表接口
     path('banklist/', views.Bank_List_View.as_view()),
 

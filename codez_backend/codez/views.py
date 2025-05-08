@@ -8,9 +8,8 @@ from django.http import HttpResponse,JsonResponse
 from codez_backend import settings
 from .Serializer import *
 from .models import *
-import datetime
-import jwt
-import os
+import datetime, jwt, os
+from .Coze_API import CodeZ_AIJudge
 
 # 密码登录接口
 class Login_Pwd_View(APIView):
@@ -1307,13 +1306,13 @@ class User_Exam_Submit_View(APIView):
             stat.attempts += 1
             stat.save()
             user = ZUserProfile.objects.filter(userid=uid)
+            user = user[0]
             if question.count():
                 question = question[0]
                 if question.type in [0, 1]:
                     if answer == question.answer:
                         stat.finished = 1
                         stat.save()
-                        user = user[0]
                         user.zcoins += 10
                         user.save()
                         ret["data"]["zcoin"] = user.zcoins
@@ -1325,9 +1324,142 @@ class User_Exam_Submit_View(APIView):
                         ret["meta"]["status"] = 200
                         ret["meta"]["message"] = "回答错误"
                         return Response(ret)
+                elif question.type == 2:
+                    judge = CodeZ_AIJudge()
+                    airet = judge.chat(question.content, question.answer, answer)
+                    try:
+                        t = airet[0].content.split('(分割符)')
+                        score = int(t[0].split(':')[1])
+                        reason = t[1].split(':')[1]
+                        ret["data"]["score"] = str(score)
+                        ret["data"]["reason"] = reason
+                    except Exception as error:
+                        print(error)
+                        ret["meta"]["status"] = 500
+                        ret["meta"]["message"] = "内部错误"
+                        return Response(ret)
+                    else:
+                        if score >= 60:
+                            stat.finished = 1
+                            stat.save()
+                            user.zcoins += 10
+                            user.save()
+                            ret["data"]["zcoin"] = user.zcoins
+                            ret["meta"]["status"] = 200
+                            ret["meta"]["message"] = "回答正确"
+                            return Response(ret)
+                        else:
+                            ret["data"]["attempts"] = stat.attempts
+                            ret["meta"]["status"] = 200
+                            ret["meta"]["message"] = "回答错误"
+                            return Response(ret)
             else:
                 ret["meta"]["status"] = 404
                 ret["meta"]["message"] = "题目不存在"
+                return Response(ret)
+
+        except Exception as error:
+            print(error)
+            ret["meta"]["status"] = 500
+            ret["meta"]["message"] = "内部错误"
+            return Response(ret)
+
+# 获取题目评论接口 (使用题目ID)
+class Question_Comment_View(APIView):
+    def post(self, request):
+        ret = {
+            "data": {
+                "comments": [],
+            },
+            "meta": {
+                "status": 200,
+                "message": ""
+            }
+        }
+        try:
+            qid = request.data["qid"]
+            stat = Question_Comment.objects.filter(questionid=qid)
+            if stat.count():
+                ret["data"]["comments"] = []
+                for c in stat:
+                    tmpobj = {"uid": c.userid, "comment": c.comment}
+                    ret["data"]["comments"].append(tmpobj)
+                ret["meta"]["status"] = 200
+                ret["meta"]["message"] = "获取成功"
+                return Response(ret)
+            else:
+                ret["meta"]["status"] = 404
+                ret["meta"]["message"] = "题目暂无评论"
+                return Response(ret)
+
+        except Exception as error:
+            print(error)
+            ret["meta"]["status"] = 500
+            ret["meta"]["message"] = "内部错误"
+            return Response(ret)
+
+# 提交评论接口
+class Comment_Submit_View(APIView):
+    def post(self, request):
+        ret = {
+            "data": {},
+            "meta": {
+                "status": 200,
+                "message": ""
+            }
+        }
+        try:
+            qid = request.data["qid"]
+            uid = request.data["uid"]
+            comment = request.data["comment"]
+            newstat = Question_Comment()
+            result = True
+            newid = 100000 + Question_Comment.objects.count()
+            while result:
+                newid += 1
+                tmpstat = Question_Comment.objects.filter(id=newid)
+                result = tmpstat.count()
+            newstat.id = newid
+            newstat.questionid = qid
+            newstat.userid = uid
+            newstat.comment = comment
+            newstat.save()
+            ret["meta"]["status"] = 200
+            ret["meta"]["message"] = "提交成功"
+            return Response(ret)
+
+        except Exception as error:
+            print(error)
+            ret["meta"]["status"] = 500
+            ret["meta"]["message"] = "内部错误"
+            return Response(ret)
+
+# 获取用户评论接口 (使用用户ID)
+class User_Comment_View(APIView):
+    def post(self, request):
+        ret = {
+            "data": {
+                "comments": [],
+            },
+            "meta": {
+                "status": 200,
+                "message": ""
+            }
+        }
+        try:
+            uid = request.data["uid"]
+            stat = Question_Comment.objects.filter(userid=uid)
+            if stat.count():
+                ret["data"]["comments"] = []
+                for c in stat:
+                    tmpobj = {"qid": c.questionid, "comment": c.comment}
+                    ret["data"]["comments"].append(tmpobj)
+                ret["meta"]["status"] = 200
+                ret["meta"]["message"] = "获取成功"
+                return Response(ret)
+            else:
+                ret["meta"]["status"] = 404
+                ret["meta"]["message"] = "用户暂无评论"
                 return Response(ret)
 
         except Exception as error:

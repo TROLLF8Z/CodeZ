@@ -10,11 +10,6 @@ const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
-      path: "/",
-      redirect: "/order/list",
-      hidden: true,
-    },
-    {
       path: "/login",
       name: "login",
       meta: { title: "登录" },
@@ -64,6 +59,20 @@ const router = createRouter({
       hidden: true,
     },
     {
+      path: "/comment",
+      name: "comment",
+      meta: { title: "评论" },
+      component: () => import("@/views/comment/comment.vue"),
+      hidden: true,
+    },
+    {
+      path: "/test",
+      name: "test",
+      meta: { title: "测试界面" },
+      component: () => import("@/views/tests/PythonEditor.vue"),
+      hidden: true,
+    },
+    {
       path: "/admin/login",
       name: "admin-login",
       meta: { title: "管理员登录" },
@@ -93,6 +102,12 @@ const router = createRouter({
           name: "题目管理",
           meta: { title: "题目管理" },
           component: () => import("@/views/admin/questions.vue"),
+        },
+        {
+          path: "comments",
+          name: "评论管理",
+          meta: { title: "评论管理" },
+          component: () => import("@/views/admin/comments.vue"),
         },
       ],
     },
