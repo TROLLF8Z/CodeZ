@@ -246,7 +246,7 @@ export default defineComponent({
       });
       if (this.timerID) {
         clearInterval(this.timerID);
-        this.timerID = null;
+        this.timerID = 0;
       }
     },
     async submit_answer() {

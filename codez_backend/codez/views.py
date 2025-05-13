@@ -172,6 +172,7 @@ class User_Profile_View(APIView):
                 ret["meta"]["message"] = "该用户不存在"
                 return Response(ret)
         except Exception as error:
+            print(error)
             ret["meta"]["status"] = 500
             ret["meta"]["message"] = "内部错误"
             return Response(ret)
@@ -1042,18 +1043,13 @@ class User_Bank_Status_View(APIView):
                 ret["meta"]["message"] = "获取成功"
                 return Response(ret)
             else:
-                stat = User_Bank_Status()
                 result = True
                 newid = 1000000 + User_Bank_Status.objects.count()
                 while result:
                     newid += 1
                     tmpstat = User_Bank_Status.objects.filter(id=newid)
                     result = tmpstat.count()
-                stat.id = newid
-                stat.userid = uid
-                stat.bankid = bid
-                stat.finished = 0
-                stat.unlocked = 0
+                stat = User_Bank_Status(id=newid, userid=uid, bankid=bid, finished=0, unlocked=0)
                 stat.save()
                 ret["data"]["finished"] = stat.finished
                 ret["data"]["unlocked"] = stat.unlocked
@@ -1426,7 +1422,7 @@ class Question_Comment_View(APIView):
     def post(self, request):
         ret = {
             "data": {
-                "comments": [],
+                "retcomment": [],
             },
             "meta": {
                 "status": 200,
@@ -1437,10 +1433,10 @@ class Question_Comment_View(APIView):
             qid = request.data["qid"]
             stat = Question_Comment.objects.filter(questionid=qid)
             if stat.count():
-                ret["data"]["comments"] = []
+                ret["data"]["retcomment"] = []
                 for c in stat:
-                    tmpobj = {"uid": c.userid, "comment": c.comment}
-                    ret["data"]["comments"].append(tmpobj)
+                    tmpobj = {"cid": c.id, "uid": c.userid, "ucomment": c.comment, "time": c.time}
+                    ret["data"]["retcomment"].append(tmpobj)
                 ret["meta"]["status"] = 200
                 ret["meta"]["message"] = "获取成功"
                 return Response(ret)
@@ -1468,7 +1464,7 @@ class Comment_Submit_View(APIView):
         try:
             qid = request.data["qid"]
             uid = request.data["uid"]
-            comment = request.data["comment"]
+            comment = request.data["ucomment"]
             newstat = Question_Comment()
             result = True
             newid = 100000 + Question_Comment.objects.count()
@@ -1478,6 +1474,7 @@ class Comment_Submit_View(APIView):
                 result = tmpstat.count()
             newstat.id = newid
             newstat.questionid = qid
+            newstat.time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             newstat.userid = uid
             newstat.comment = comment
             newstat.save()
@@ -1517,6 +1514,37 @@ class User_Comment_View(APIView):
             else:
                 ret["meta"]["status"] = 404
                 ret["meta"]["message"] = "用户暂无评论"
+                return Response(ret)
+
+        except Exception as error:
+            print(error)
+            ret["meta"]["status"] = 500
+            ret["meta"]["message"] = "内部错误"
+            return Response(ret)
+
+# 删除评论接口
+class Comment_Delete_View(APIView):
+    def post(self, request):
+        ret = {
+            "data": {},
+            "meta": {
+                "status": 200,
+                "message": ""
+            }
+        }
+        try:
+            cid = request.data["cid"]
+
+            comment = Question_Comment.objects.filter(id=cid)
+            if comment.count():
+                comment = comment[0]
+                comment.delete()
+                ret["meta"]["status"] = 200
+                ret["meta"]["message"] = "删除成功"
+                return Response(ret)
+            else:
+                ret["meta"]["status"] = 500
+                ret["meta"]["message"] = "未找到对应评论词条"
                 return Response(ret)
 
         except Exception as error:

@@ -44,6 +44,9 @@ urlpatterns = [
     # 提交评论接口
     path('comment/submit/', views.Comment_Submit_View.as_view()),
 
+    # 删除评论接口
+    path('comment/delete/', views.Comment_Delete_View.as_view()),
+
     # 首页获取题库列表接口
     path('banklist/', views.Bank_List_View.as_view()),
 
